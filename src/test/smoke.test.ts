@@ -346,6 +346,7 @@ test("acceptance trace link can cover items without token overlap", async () => 
 test("low-confidence automation decisions are deferred and do not write back state", () => {
   const engine = new PhonoWellEngine();
   engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
 
   const drop = engine.ingestDrop({
     type: "note",
@@ -367,9 +368,209 @@ test("low-confidence automation decisions are deferred and do not write back sta
 
   assert.equal(domainDecision?.applied, false);
   assert.equal(summaryDecision?.applied, false);
+  assert.equal(summaryDecision?.approvalClass, "review-required");
   assert.ok(domainDecision?.deferredReason);
   assert.equal(updatedDrop.domain, "delivery");
   assert.equal(updatedDrop.summary, "tiny");
+});
+
+test("assistant loop exposes automation review checkpoints in user-facing language", () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
+
+  const drop = engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "Short relation hint",
+    summary: "tiny",
+    preserveOrphan: false,
+  });
+  engine.schedulePostIngestAutomation(drop.dropId, "test.loop-checkpoint");
+  engine.processPendingAutomationTasks();
+
+  const loop = engine.getMainLoopSnapshot();
+
+  assert.equal(loop.status, "blocked");
+  assert.equal(loop.primaryAction.key, "review-checkpoint");
+  assert.equal(loop.reviewCheckpoints.some((item) => item.source === "automation"), true);
+  assert.equal(loop.reviewCheckpoints.some((item) => /Review/.test(item.title)), true);
+});
+
+test("resolved automation checkpoint is removed from the assistant loop", () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
+
+  const drop = engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "Short relation hint",
+    summary: "tiny",
+    preserveOrphan: false,
+  });
+  engine.schedulePostIngestAutomation(drop.dropId, "test.loop-checkpoint-resolved");
+  engine.processPendingAutomationTasks();
+
+  const goalDropId = engine.getState().well.originDropId;
+  assert.ok(goalDropId);
+  if (!goalDropId) {
+    throw new Error("expected goal origin drop");
+  }
+  engine.updateDrop(drop.dropId, {
+    summary: "This summary is now long enough to be confidently linked to the goal.",
+    skipAutoFlow: true,
+  });
+  engine.connectDrops(goalDropId, drop.dropId, "implements");
+
+  const loop = engine.getMainLoopSnapshot();
+
+  assert.equal(loop.reviewCheckpoints.some((item) => item.source === "automation"), false);
+});
+
+test("accept current direction stores a durable acceptance decision", () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
+  engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "Accepted material",
+    summary: "Enough material exists for an explicit acceptance decision.",
+    preserveOrphan: false,
+  });
+  const state = engine.getState();
+  state.pendingChangedDropIds = [];
+  state.candidates.unshift({
+    candidateId: "candidate-accepted",
+    wellId: state.well.id,
+    content: "accepted candidate",
+    coverageDropIds: state.drops.map((drop) => drop.dropId),
+    createdAt: new Date().toISOString(),
+  });
+  state.verifyReports.unshift({
+    pass: true,
+    issues: [],
+    suggestions: [],
+    acceptanceCoverageDropIds: [state.well.acceptanceDropId],
+    acceptanceItems: [],
+    changedDropCoverage: [],
+    uncoveredAcceptanceItemIds: [],
+    selfIterationEvidence: ["run-1:verify:pass"],
+    changedDropIds: [],
+    rerunConsistent: true,
+    createdAt: new Date().toISOString(),
+  });
+  engine.replaceState(state);
+
+  const ready = engine.getMainLoopSnapshot();
+  assert.equal(ready.primaryAction.key, "accept-direction");
+
+  const accepted = engine.acceptCurrentDirection("test.accepted");
+  assert.equal(accepted.status, "complete");
+  assert.equal(accepted.statusLabel, "Accepted");
+  assert.equal(accepted.acceptanceStatus, "accepted");
+  assert.equal(accepted.latestArtifact?.accepted, true);
+  assert.equal(engine.getState().well.acceptedCandidateId, "candidate-accepted");
+});
+
+test("accepted direction is cleared after new changes", () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
+  engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "Accepted material",
+    summary: "Enough material exists for an explicit acceptance decision.",
+    preserveOrphan: false,
+  });
+  const state = engine.getState();
+  state.pendingChangedDropIds = [];
+  state.candidates.unshift({
+    candidateId: "candidate-before-change",
+    wellId: state.well.id,
+    content: "accepted candidate",
+    coverageDropIds: state.drops.map((drop) => drop.dropId),
+    createdAt: new Date().toISOString(),
+  });
+  state.verifyReports.unshift({
+    pass: true,
+    issues: [],
+    suggestions: [],
+    acceptanceCoverageDropIds: [state.well.acceptanceDropId],
+    acceptanceItems: [],
+    changedDropCoverage: [],
+    uncoveredAcceptanceItemIds: [],
+    selfIterationEvidence: ["run-1:verify:pass"],
+    changedDropIds: [],
+    rerunConsistent: true,
+    createdAt: new Date().toISOString(),
+  });
+  engine.replaceState(state);
+  engine.acceptCurrentDirection("test.accepted");
+
+  engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "New material after acceptance",
+    summary: "This should invalidate the previous accepted direction.",
+    preserveOrphan: false,
+  });
+
+  const loop = engine.getMainLoopSnapshot();
+  assert.equal(loop.acceptanceStatus, "pending");
+  assert.equal(engine.getState().well.acceptanceStatus, "pending");
+  assert.equal(engine.getState().well.acceptedCandidateId, undefined);
+});
+
+test("accept current direction stays blocked when verify evidence is stale", () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
+  engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "Initial material",
+    summary: "Material used for the verified candidate.",
+    preserveOrphan: false,
+  });
+  const state = engine.getState();
+  state.pendingChangedDropIds = [];
+  state.candidates.unshift({
+    candidateId: "candidate-verified",
+    wellId: state.well.id,
+    content: "verified candidate",
+    coverageDropIds: state.drops.map((drop) => drop.dropId),
+    createdAt: "2026-03-10T01:00:00.000Z",
+  });
+  state.verifyReports.unshift({
+    pass: true,
+    issues: [],
+    suggestions: [],
+    acceptanceCoverageDropIds: [state.well.acceptanceDropId],
+    acceptanceItems: [],
+    changedDropCoverage: [],
+    uncoveredAcceptanceItemIds: [],
+    selfIterationEvidence: ["run-1:verify:pass"],
+    changedDropIds: [],
+    rerunConsistent: true,
+    createdAt: "2026-03-10T01:05:00.000Z",
+  });
+  state.candidates.unshift({
+    candidateId: "candidate-unverified",
+    wellId: state.well.id,
+    content: "newer unverified candidate",
+    coverageDropIds: state.drops.map((drop) => drop.dropId),
+    createdAt: "2026-03-10T01:10:00.000Z",
+  });
+  engine.replaceState(state);
+
+  const loop = engine.getMainLoopSnapshot();
+  assert.notEqual(loop.primaryAction.key, "accept-direction");
+  assert.equal(loop.latestVerifyPass, undefined);
+  assert.equal(loop.acceptanceStatus, "pending");
+  assert.throws(() => engine.acceptCurrentDirection("test.stale-verify"), /not ready for acceptance/);
 });
 
 test("invalid structured packet output is marked as fallback", () => {

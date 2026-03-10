@@ -50,6 +50,15 @@ export type WellStatus =
   | "verify";
 
 export type DryRunStatus = "pass" | "warn" | "fail";
+export type ApprovalClass = "auto-apply" | "review-required" | "user-only";
+export type AssistantLoopStatus = "idle" | "running" | "blocked" | "complete" | "failed";
+export type AssistantLoopUserState = "ready" | "needs-input" | "risk-found" | "evidence-attached";
+export type AssistantLoopActionKey =
+  | "add-material"
+  | "confirm-goal"
+  | "continue-loop"
+  | "review-checkpoint"
+  | "accept-direction";
 
 export type LifecycleState = "candidate" | "promoted" | "archived";
 
@@ -77,6 +86,9 @@ export interface Well {
   constraints: string[];
   originDropId?: string;
   acceptanceDropId: string;
+  acceptanceStatus: "pending" | "accepted";
+  acceptedCandidateId?: string;
+  acceptedAt?: string;
   status: WellStatus;
   dryRunStatus: DryRunStatus;
   dryRunReport?: DryRunReport;
@@ -264,7 +276,7 @@ export interface MicroLifecycleSummary {
 
 export interface RunLog {
   runId: string;
-  stage: "intake" | "ingest" | "modeling" | "conflict" | "analyze" | "organize" | "gap-fill" | "dry-run" | "generate" | "verify";
+  stage: "assistant-loop" | "intake" | "ingest" | "modeling" | "conflict" | "analyze" | "organize" | "gap-fill" | "dry-run" | "generate" | "verify";
   status: "pass" | "warn" | "fail";
   summary: string;
   payload: Record<string, unknown>;
@@ -323,6 +335,7 @@ export interface AutomationDecision {
   decisionId: string;
   kind: "summary" | "layer" | "domain" | "priority" | "relation" | "conflict" | "preflight";
   source: "heuristic" | "model-assisted" | "system-rule";
+  approvalClass: ApprovalClass;
   targetDropId?: string;
   proposedValue: string;
   confidence: number;
@@ -420,7 +433,73 @@ export interface ChangeProposal {
   rejectedAt?: string;
 }
 
+export interface MainLoopAction {
+  key: AssistantLoopActionKey;
+  label: string;
+  detail: string;
+}
+
+export interface ReviewCheckpoint {
+  checkpointId: string;
+  kind: "input" | "review" | "risk" | "acceptance";
+  title: string;
+  summary: string;
+  source: "goal" | "automation" | "dry-run" | "verify";
+  targetDropId?: string;
+  approvalClass?: ApprovalClass;
+  nextAction: MainLoopAction;
+  evidence: string[];
+  createdAt: string;
+}
+
+export interface MainLoopArtifactSummary {
+  candidateId: string;
+  excerpt: string;
+  createdAt: string;
+  coverageDropCount: number;
+  accepted: boolean;
+  acceptedAt?: string;
+}
+
+export interface MainLoopResultSummary {
+  trust: AssistantLoopUserState;
+  label: "ready" | "needs input" | "risk found" | "evidence attached";
+  summary: string;
+  evidenceCount: number;
+  changedDropCount: number;
+  createdAt?: string;
+}
+
+export interface AssistantLoopState {
+  status: AssistantLoopStatus;
+  userState: AssistantLoopUserState;
+  statusLabel: string;
+  summary: string;
+  blockedReason?: string;
+  nextAction: MainLoopAction;
+  updatedAt: string;
+  lastRunAt?: string;
+  latestCandidateId?: string;
+  latestVerifyPass?: boolean;
+  lastError?: string;
+}
+
 export interface MainLoopSnapshot {
+  status: AssistantLoopStatus;
+  userState: AssistantLoopUserState;
+  statusLabel: string;
+  summary: string;
+  blockedReason?: string;
+  primaryAction: MainLoopAction;
+  currentGoalSummary?: string;
+  latestArtifact?: MainLoopArtifactSummary;
+  latestResult?: MainLoopResultSummary;
+  acceptanceStatus: "pending" | "accepted";
+  acceptedCandidateId?: string;
+  acceptedAt?: string;
+  nextCheckpoint?: ReviewCheckpoint;
+  reviewCheckpoints: ReviewCheckpoint[];
+  openCheckpointCount: number;
   stageChain: ["asset", "proposal", "gate", "apply", "verify"];
   latestProposalId?: string;
   latestProposalStatus?: ChangeProposal["status"];
@@ -500,6 +579,7 @@ export interface WellState {
   unresolvedQuestions: string[];
   assetConversations: ConversationMessage[];
   automationTasks: AutomationTaskRecord[];
+  assistantLoop: AssistantLoopState;
 }
 
 export interface CatalogAsset {

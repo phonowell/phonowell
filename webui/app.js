@@ -1,4 +1,4 @@
-import React, { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { startTransition, useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 const e = React.createElement;
@@ -6,119 +6,129 @@ const e = React.createElement;
 const COPY = {
   zh: {
     booting: "启动 phonowell...",
-    subtitle: "把零散输入稳定收敛成可交付结果",
+    subtitle: "把零散材料收敛成一个可判断的结果",
     language: "语言",
     languageZh: "中文",
     languageEn: "English",
-    organize: "整理资产",
-    preflight: "预检",
-    generate: "生成产物",
-    verify: "验证",
-    generateBlocked: "生成产物（预检未通过）",
-    addAsset: "添加新资产",
-    addAssetTitle: "添加新资产",
-    addAssetHint: "输入文本或拖入文件。添加后先作为孤儿资产进入画布。",
-    assetText: "文本输入",
-    assetTextPlaceholder: "粘贴需求、链接说明、想法、摘要。可用空行分隔为多个资产。",
-    dropFiles: "拖入文件到此处，或使用文件选择",
-    confirmAdd: "确认添加",
-    cancel: "取消",
-    canvas: "资产画布",
-    globalScope: "全局范围",
-    assetScope: "当前资产范围",
-    llmPlaceholderGlobal: "向 Phonowell 输入全局指令、问题或补充上下文",
-    llmPlaceholderAsset: "向当前资产输入补充说明、问题或修改要求",
-    summary: "信息摘要",
-    conversation: "对话流",
-    noSelection: "未选中资产",
-    noConversation: "暂无会话流，当前显示运行日志摘要。",
-    orphan: "孤儿资产",
-    dragHint: "拖拽调整位置",
-    selectPrompt: "点击画布中的资产查看摘要与会话流",
+    currentGoal: "当前目标",
+    currentArtifact: "当前结果",
+    nextCheckpoint: "下一检查点",
+    noGoal: "先补充材料并确认目标。",
+    noArtifact: "助手还没有产出可判断的结果。",
+    noCheckpoint: "当前没有待审查的检查点。",
+    trust: "可信度",
+    materialTitle: "材料输入",
+    materialHint: "粘贴文本、补充链接说明，或拖入文件。材料会立即进入项目。",
+    materialPlaceholder: "输入需求、上下文、参考链接、结构草稿或约束。",
     queuedFiles: "待添加文件",
     noFiles: "暂无文件",
-    send: "发送",
-    close: "关闭",
-    status: "状态",
-    latestProposal: "最新提案",
-    latestVerify: "最新验证",
-    assetDetails: "资产详情",
-    selectedAsset: "已选资产",
-    selectAssetTip: "选中资产后可查看摘要与会话",
-    activeAsset: "当前资产",
-    goalPanel: "目标源",
-    goalDraft: "起草目标",
-    goalConfirm: "确认目标",
-    goalRevise: "标记修订",
-    goalSummaryPlaceholder: "编辑目标摘要，确认后才允许稳定生成",
+    addMaterial: "添加材料",
+    goalTitle: "目标确认",
+    goalHint: "只保留一条当前最想交付的方向。确认后，助手才会默认推进生成。",
+    goalPlaceholder: "用一句话描述要交付什么，以及怎样算完成。",
+    confirmGoal: "确认目标",
+    reviseGoal: "标记修订",
+    draftGoal: "重新起草",
+    artifactTitle: "当前结果",
+    artifactHint: "这里始终显示最新候选结果和可信说明。",
+    artifactCoverage: "覆盖材料数",
+    acceptedAt: "接受时间",
+    resultSummary: "结果说明",
+    checkpointTitle: "待处理检查点",
+    checkpointHint: "只展示会阻塞默认主循环的高影响检查点。",
+    noReview: "当前没有额外审查项。",
+    diagnostics: "诊断与手工控制",
+    diagnosticsHint: "这里保留手工编辑、连接、阶段运行和原始证据，不阻塞默认路径。",
+    manualControls: "手工控制",
+    organize: "整理",
+    preflight: "预检",
+    generate: "生成",
+    verify: "验证",
+    materials: "材料列表",
+    noSelection: "未选中材料",
+    selectMaterial: "选择一个材料查看详情、关系和对话。",
+    saveSummary: "保存摘要",
     connectRelation: "连接关系",
     relationType: "关系类型",
-    saveSummary: "保存摘要",
-    automation: "自动整理",
-    acceptance: "验收覆盖",
-    verifyRoute: "验证路由",
-    priorityAudit: "优先级审计",
-    applied: "已落地",
-    deferred: "已延后",
+    automation: "自动决策记录",
     evidence: "证据",
+    acceptance: "验收映射",
+    conversation: "对话",
+    conversationPlaceholderGlobal: "补充目标、提问，或让助手解释下一步。",
+    conversationPlaceholderAsset: "针对当前材料补充说明或提出修改要求。",
+    send: "发送",
+    activeMaterial: "当前材料",
+    rawRuntime: "运行诊断",
+    status: "状态",
+    primaryAction: "主动作",
+    noConversations: "暂无对话记录。",
+    noAutomation: "暂无自动决策记录。",
+    noAcceptance: "暂无验收映射结果。",
+    packetSummary: "最新运行摘要",
+    proposalSummary: "最新提案摘要",
   },
   en: {
     booting: "booting phonowell...",
-    subtitle: "Turn scattered input into a deliverable result",
+    subtitle: "Turn scattered material into one reviewable result",
     language: "Language",
     languageZh: "中文",
     languageEn: "English",
-    organize: "Organize Assets",
-    preflight: "Preflight",
-    generate: "Generate Artifact",
-    verify: "Verify",
-    generateBlocked: "Generate (Preflight Required)",
-    addAsset: "Add Asset",
-    addAssetTitle: "Add Asset",
-    addAssetHint: "Paste text or drop files. New assets enter the canvas as orphans first.",
-    assetText: "Text Input",
-    assetTextPlaceholder: "Paste requirements, notes, links, or ideas. Separate multiple assets with blank lines.",
-    dropFiles: "Drop files here, or choose files",
-    confirmAdd: "Add",
-    cancel: "Cancel",
-    canvas: "Asset Canvas",
-    globalScope: "Global Scope",
-    assetScope: "Asset Scope",
-    llmPlaceholderGlobal: "Ask globally, add context, or direct the system",
-    llmPlaceholderAsset: "Ask about this asset, add context, or request edits",
-    summary: "Summary",
-    conversation: "Conversation",
-    noSelection: "No asset selected",
-    noConversation: "No conversation yet. Showing recent runtime logs instead.",
-    orphan: "orphan asset",
-    dragHint: "drag to reposition",
-    selectPrompt: "Click an asset to open summary and conversation",
-    queuedFiles: "Queued Files",
+    currentGoal: "Current goal",
+    currentArtifact: "Current result",
+    nextCheckpoint: "Next checkpoint",
+    noGoal: "Add material and confirm the goal first.",
+    noArtifact: "No reviewable result yet.",
+    noCheckpoint: "No blocking checkpoint right now.",
+    trust: "Trust",
+    materialTitle: "Material intake",
+    materialHint: "Paste text, add links, or drop files. Material enters the project immediately.",
+    materialPlaceholder: "Paste requirements, context, reference links, structure ideas, or constraints.",
+    queuedFiles: "Queued files",
     noFiles: "No files",
-    send: "Send",
-    close: "Close",
-    status: "Status",
-    latestProposal: "Latest Proposal",
-    latestVerify: "Latest Verify",
-    assetDetails: "Asset Details",
-    selectedAsset: "Selected Asset",
-    selectAssetTip: "Select an asset to inspect summary and conversation",
-    activeAsset: "Active Asset",
-    goalPanel: "Goal Origin",
-    goalDraft: "Draft Goal",
-    goalConfirm: "Confirm Goal",
-    goalRevise: "Mark Revised",
-    goalSummaryPlaceholder: "Edit the goal summary before confirming generation intent",
-    connectRelation: "Connect Relation",
-    relationType: "Relation Type",
-    saveSummary: "Save Summary",
-    automation: "Automation",
-    acceptance: "Acceptance Coverage",
-    verifyRoute: "Verify Route",
-    priorityAudit: "Priority Audit",
-    applied: "Applied",
-    deferred: "Deferred",
+    addMaterial: "Add material",
+    goalTitle: "Goal confirmation",
+    goalHint: "Keep one current delivery direction. The assistant only generates by default after confirmation.",
+    goalPlaceholder: "Describe the deliverable and what success looks like.",
+    confirmGoal: "Confirm goal",
+    reviseGoal: "Mark revised",
+    draftGoal: "Draft again",
+    artifactTitle: "Current result",
+    artifactHint: "This always shows the latest candidate and trust summary.",
+    artifactCoverage: "Covered material",
+    acceptedAt: "Accepted at",
+    resultSummary: "Result summary",
+    checkpointTitle: "Blocking checkpoints",
+    checkpointHint: "Only high-impact checkpoints that block the default loop appear here.",
+    noReview: "No extra review item right now.",
+    diagnostics: "Diagnostics and manual controls",
+    diagnosticsHint: "Manual edits, links, stage runs, and raw evidence stay here without blocking the default path.",
+    manualControls: "Manual controls",
+    organize: "Organize",
+    preflight: "Preflight",
+    generate: "Generate",
+    verify: "Verify",
+    materials: "Materials",
+    noSelection: "No material selected",
+    selectMaterial: "Select a material to inspect details, relations, and conversation.",
+    saveSummary: "Save summary",
+    connectRelation: "Connect relation",
+    relationType: "Relation type",
+    automation: "Automation log",
     evidence: "Evidence",
+    acceptance: "Acceptance mapping",
+    conversation: "Conversation",
+    conversationPlaceholderGlobal: "Add context, ask a question, or ask the assistant to explain the next step.",
+    conversationPlaceholderAsset: "Add instructions or request changes for the selected material.",
+    send: "Send",
+    activeMaterial: "Active material",
+    rawRuntime: "Runtime diagnostics",
+    status: "Status",
+    primaryAction: "Primary action",
+    noConversations: "No conversation yet.",
+    noAutomation: "No automation log yet.",
+    noAcceptance: "No acceptance mapping yet.",
+    packetSummary: "Latest runtime summary",
+    proposalSummary: "Latest proposal summary",
   },
 };
 
@@ -145,21 +155,6 @@ async function apiOrDefault(path, fallback, options = {}) {
   }
 }
 
-function getNodePosition(drop, index, total) {
-  if (drop.position && Number.isFinite(drop.position.x) && Number.isFinite(drop.position.y)) {
-    return { x: drop.position.x, y: drop.position.y };
-  }
-  if (drop.type === "goal-origin") {
-    return { x: 420, y: 220 };
-  }
-  const radius = 280;
-  const angle = (index / Math.max(1, total - 1)) * Math.PI * 2;
-  return {
-    x: Math.round(440 + radius * Math.cos(angle)),
-    y: Math.round(260 + radius * Math.sin(angle)),
-  };
-}
-
 function summarizeFileForAsset(file) {
   const type = file.type || "application/octet-stream";
   const textLike = type.startsWith("text/") || /(json|xml|javascript|typescript|markdown|csv|svg)/i.test(type);
@@ -169,38 +164,42 @@ function summarizeFileForAsset(file) {
   return Promise.resolve(`[binary file] ${file.name} (${type}, ${file.size} bytes)`);
 }
 
+function statusClass(key) {
+  return `status-pill ${String(key || "neutral").replace(/[^a-z-]+/g, "-")}`;
+}
+
 function App() {
   const [state, setState] = useState(null);
+  const [loop, setLoop] = useState(null);
+  const [observability, setObservability] = useState(null);
   const [packets, setPackets] = useState([]);
   const [proposals, setProposals] = useState([]);
   const [conversations, setConversations] = useState([]);
-  const [observability, setObservability] = useState(null);
   const [language, setLanguage] = useState("zh");
-  const [assetModalOpen, setAssetModalOpen] = useState(false);
+  const [selectedDropId, setSelectedDropId] = useState("");
   const [assetInput, setAssetInput] = useState("");
   const [queuedFiles, setQueuedFiles] = useState([]);
-  const [selectedDropId, setSelectedDropId] = useState("");
-  const [llmInput, setLlmInput] = useState("");
-  const [dragging, setDragging] = useState(null);
   const [goalDraft, setGoalDraft] = useState("");
   const [editedSummary, setEditedSummary] = useState("");
   const [connectTargetId, setConnectTargetId] = useState("");
   const [connectType, setConnectType] = useState("references");
-  const canvasRef = useRef(null);
+  const [llmInput, setLlmInput] = useState("");
   const t = COPY[language];
 
   const refresh = useCallback(async () => {
-    const [stateData, packetData, observabilityData, proposalData, conversationData] = await Promise.all([
+    const [stateData, loopData, observabilityData, packetData, proposalData, conversationData] = await Promise.all([
       api("/api/state"),
-      apiOrDefault("/api/packets", { packets: [] }),
+      api("/api/loop"),
       api("/api/observability"),
+      apiOrDefault("/api/packets", { packets: [] }),
       apiOrDefault("/api/proposals", { proposals: [] }),
       api(`/api/conversations${selectedDropId ? `?dropId=${selectedDropId}` : ""}`),
     ]);
     startTransition(() => {
       setState(stateData);
-      setPackets(packetData.packets || []);
+      setLoop(loopData.loop);
       setObservability(observabilityData);
+      setPackets(packetData.packets || []);
       setProposals(proposalData.proposals || []);
       setConversations(conversationData.messages || []);
       setSelectedDropId((current) => current && stateData.drops.some((drop) => drop.dropId === current) ? current : "");
@@ -211,80 +210,27 @@ function App() {
     refresh().catch((error) => window.alert(String(error)));
   }, [refresh]);
 
-  useEffect(() => {
-    if (!dragging) {
-      return undefined;
-    }
-    const onMove = (event) => {
-      const canvas = canvasRef.current;
-      if (!canvas) {
-        return;
-      }
-      const rect = canvas.getBoundingClientRect();
-      setDragging((current) => current ? {
-        ...current,
-        x: Math.round(event.clientX - rect.left - current.offsetX),
-        y: Math.round(event.clientY - rect.top - current.offsetY),
-      } : null);
-    };
-    const onUp = async () => {
-      const finalDrag = dragging;
-      setDragging(null);
-      if (!finalDrag) {
-        return;
-      }
-      await api(`/api/drops/${finalDrag.dropId}`, {
-        method: "PUT",
-        body: JSON.stringify({ position: { x: finalDrag.x, y: finalDrag.y }, skipAutoFlow: true }),
-      });
-      await refresh();
-    };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-    };
-  }, [dragging, refresh]);
-
-  const labels = useMemo(() => ({
-    packet: packets[0]?.response?.structured?.summary || packets[0]?.response?.summary || null,
-  }), [packets]);
-
-  if (!state) {
-    return e("div", { className: "booting" }, t.booting);
-  }
-
-  const visibleDrops = state.drops.filter((drop) => drop.lifecycleState !== "archived");
-  const latestProposal = proposals[0] || null;
-  const latestVerify = state.verifyReports?.[0] || null;
-  const latestAutomation = observability?.automationTasks?.[0] || state.automationTasks?.[0] || null;
-  const latestVerifyCycle = state.verifyCycles?.[0] || null;
-  const dryRunStatus = state.well.dryRunStatus;
-  const canGenerate = dryRunStatus === "pass";
-  const canVerify = (state.candidates?.length ?? 0) > 0;
+  const visibleDrops = state?.drops?.filter((drop) => drop.lifecycleState !== "archived") || [];
   const selectedDrop = visibleDrops.find((drop) => drop.dropId === selectedDropId) || null;
-  const goalDrop = visibleDrops.find((drop) => drop.type === "goal-origin") || null;
-  const showGoalPanel = !selectedDrop || selectedDrop.type === "goal-origin";
-  const nodeMap = new Map();
-  visibleDrops.forEach((drop, index) => {
-    const pos = dragging?.dropId === drop.dropId ? { x: dragging.x, y: dragging.y } : getNodePosition(drop, index, visibleDrops.length);
-    nodeMap.set(drop.dropId, { ...pos, width: 250, height: 110 });
-  });
-  const conversationItems = conversations;
-  const selectedSummary = selectedDrop ? [
-    `${selectedDrop.type} · ${selectedDrop.layer} · ${selectedDrop.priority}`,
-    selectedDrop.summary,
-  ].join("\n") : "";
+  const latestAutomation = observability?.automationTasks?.[0] || state?.automationTasks?.[0] || null;
+  const latestVerify = state?.verifyReports?.[0] || null;
+  const latestVerifyCycle = state?.verifyCycles?.[0] || null;
+  const latestPacket = packets[0] || null;
+  const latestProposal = proposals[0] || null;
 
   useEffect(() => {
-    setGoalDraft(goalDrop?.summary || "");
-  }, [goalDrop?.dropId, goalDrop?.summary]);
+    const goal = visibleDrops.find((drop) => drop.type === "goal-origin");
+    setGoalDraft(goal?.summary || "");
+  }, [visibleDrops]);
 
   useEffect(() => {
     setEditedSummary(selectedDrop?.summary || "");
     setConnectTargetId("");
   }, [selectedDrop?.dropId, selectedDrop?.summary]);
+
+  if (!state || !loop) {
+    return e("div", { className: "booting" }, t.booting);
+  }
 
   async function handleAddAssets() {
     const blocks = assetInput.split(/\n\s*\n/g).map((item) => item.trim()).filter(Boolean);
@@ -299,53 +245,12 @@ function App() {
       }));
     }
     if (tasks.length === 0) {
-      window.alert(t.addAssetHint);
+      window.alert(t.materialHint);
       return;
     }
     await Promise.all(tasks);
     setAssetInput("");
     setQueuedFiles([]);
-    setAssetModalOpen(false);
-    await refresh();
-  }
-
-  async function handleFileInput(event) {
-    const files = Array.from(event.target.files || []);
-    const loaded = await Promise.all(files.map(async (file) => ({ name: file.name, type: file.type, content: await summarizeFileForAsset(file) })));
-    setQueuedFiles((current) => [...current, ...loaded]);
-    event.target.value = "";
-  }
-
-  async function handleDropFiles(event) {
-    event.preventDefault();
-    const files = Array.from(event.dataTransfer?.files || []);
-    const loaded = await Promise.all(files.map(async (file) => ({ name: file.name, type: file.type, content: await summarizeFileForAsset(file) })));
-    setQueuedFiles((current) => [...current, ...loaded]);
-  }
-
-  async function handleOrganize() {
-    await api("/api/deep-organize", { method: "POST", body: JSON.stringify({ trigger: "ui.organize.assets" }) });
-    await refresh();
-  }
-
-  async function handlePreflight() {
-    await api("/api/dry-run", { method: "POST" });
-    await refresh();
-  }
-
-  async function handleGenerate() {
-    await api("/api/generate", { method: "POST" });
-    await refresh();
-  }
-
-  async function handleVerify() {
-    await api("/api/verify", { method: "POST" });
-    await refresh();
-  }
-
-  async function handleGoalDraft() {
-    const result = await api("/api/goal/draft", { method: "POST" });
-    setGoalDraft(result.goal?.summary || "");
     await refresh();
   }
 
@@ -357,8 +262,54 @@ function App() {
     await refresh();
   }
 
+  async function handleGoalDraft() {
+    await api("/api/goal/draft", { method: "POST" });
+    await refresh();
+  }
+
+  async function handlePrimaryAction() {
+    if (!loop?.primaryAction) {
+      return;
+    }
+    switch (loop.primaryAction.key) {
+      case "add-material":
+        await handleAddAssets();
+        break;
+      case "confirm-goal":
+        await handleGoalStatus("confirmed");
+        break;
+      case "accept-direction":
+        await api("/api/assistant-loop/accept", {
+          method: "POST",
+          body: JSON.stringify({ note: "ui.accept-direction" }),
+        });
+        await refresh();
+        break;
+      default:
+        await api("/api/assistant-loop", {
+          method: "POST",
+          body: JSON.stringify({ trigger: "ui.primary-action" }),
+        });
+        await refresh();
+        break;
+    }
+  }
+
+  async function handleFileInput(event) {
+    const files = Array.from(event.target.files || []);
+    const loaded = await Promise.all(files.map(async (file) => ({
+      name: file.name,
+      type: file.type,
+      content: await summarizeFileForAsset(file),
+    })));
+    setQueuedFiles((current) => [...current, ...loaded]);
+    event.target.value = "";
+  }
+
   async function handleSaveSummary() {
-    if (!selectedDrop) return;
+    if (!selectedDrop) {
+      return;
+    }
     await api(`/api/drops/${selectedDrop.dropId}`, {
       method: "PUT",
       body: JSON.stringify({ summary: editedSummary, skipAutoFlow: false }),
@@ -394,192 +345,222 @@ function App() {
     await refresh();
   }
 
-  function startDrag(event, drop) {
-    if (event.target.closest(".node-title-click")) {
-      return;
-    }
-    const rect = event.currentTarget.getBoundingClientRect();
-    const pos = drop.position || getNodePosition(drop, 0, visibleDrops.length);
-    setDragging({
-      dropId: drop.dropId,
-      offsetX: event.clientX - rect.left,
-      offsetY: event.clientY - rect.top,
-      x: pos.x,
-      y: pos.y,
-    });
+  async function runManual(path, trigger) {
+    await api(path, { method: "POST", body: JSON.stringify(trigger ? { trigger } : {}) });
+    await refresh();
   }
 
-  return e("div", { className: "stage-shell" },
-    e("main", { className: "canvas-stage" },
-      e("section", { className: "canvas-fullscreen", ref: canvasRef },
-        e("div", { className: "canvas-action-group" },
-          e("button", { className: "ghost", disabled: !canVerify, onClick: handleVerify, type: "button" }, t.verify),
-          e("button", { onClick: handleOrganize, type: "button" }, t.organize),
-          e("button", { className: "ghost", onClick: handlePreflight, type: "button" }, t.preflight),
-          e("button", { disabled: !canGenerate, onClick: handleGenerate, type: "button" }, canGenerate ? t.generate : t.generateBlocked),
+  return e("div", { className: "app-shell" },
+    e("header", { className: "hero-card" },
+      e("div", { className: "hero-top" },
+        e("div", null,
+          e("div", { className: "kicker" }, "phonowell"),
+          e("h1", { className: "hero-title" }, loop.statusLabel),
+          e("p", { className: "hero-subtitle" }, loop.summary || t.subtitle),
         ),
-        e("div", { className: "canvas-status-bar" },
-          e("div", null, `${t.status}: dry-run=${dryRunStatus}`),
-          latestProposal ? e("div", null, `${t.latestProposal}: ${latestProposal.summary}`) : null,
-          latestVerify ? e("div", null, `${t.latestVerify}: ${latestVerify.pass}`) : null,
-        ),
-        state.relations.map((rel) => {
-          const from = nodeMap.get(rel.fromDropId);
-          const to = nodeMap.get(rel.toDropId);
-          if (!from || !to) return null;
-          const x1 = from.x + from.width / 2;
-          const y1 = from.y + from.height / 2;
-          const x2 = to.x + to.width / 2;
-          const y2 = to.y + to.height / 2;
-          const dx = x2 - x1;
-          const dy = y2 - y1;
-          const length = Math.sqrt(dx * dx + dy * dy);
-          const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-          return e("div", { key: rel.relationId, className: "edge", style: { left: `${x1}px`, top: `${y1}px`, width: `${length}px`, transform: `rotate(${angle}deg)` } });
-        }),
-        visibleDrops.map((drop, index) => {
-          const pos = dragging?.dropId === drop.dropId ? { x: dragging.x, y: dragging.y } : getNodePosition(drop, index, visibleDrops.length);
-          const isOrphan = !state.relations.some((rel) => rel.fromDropId === drop.dropId || rel.toDropId === drop.dropId);
-          return e("button", {
-            key: drop.dropId,
-            className: `node stage-node ${selectedDropId === drop.dropId ? "selected" : ""} ${drop.layer}`,
-            style: { left: `${pos.x}px`, top: `${pos.y}px` },
-            type: "button",
-            onPointerDown: (event) => startDrag(event, drop),
-            onClick: () => setSelectedDropId(drop.dropId),
-          },
-            e("div", { className: "title node-title-click" }, drop.title),
-            e("div", { className: "summary" }, drop.summary),
-            isOrphan ? e("div", { className: "node-badge orphan" }, t.orphan) : null,
-            e("div", { className: "meta" }, `${drop.layer} · ${drop.priority} · ${t.dragHint}`),
-          );
-        }),
-        !selectedDrop ? e("div", { className: "canvas-empty-hint" }, t.selectPrompt) : null,
-        e("section", { className: `asset-detail-card ${selectedDrop ? "visible" : ""}` },
-          e("div", { className: "asset-detail-head" },
-            e("div", null,
-              e("div", { className: "asset-detail-kicker" }, t.assetDetails),
-              e("div", { className: "asset-detail-title" }, selectedDrop ? selectedDrop.title : t.noSelection),
-            ),
-            e("div", { className: "row" },
-              e("button", { className: "ghost", onClick: () => setLanguage((value) => value === "zh" ? "en" : "zh"), type: "button" }, `${t.language}: ${language === "zh" ? t.languageEn : t.languageZh}`),
-              selectedDrop ? e("button", { className: "ghost", onClick: () => setSelectedDropId(""), type: "button" }, t.close) : null,
-            ),
-          ),
-          selectedDrop
-            ? e(React.Fragment, null,
-                showGoalPanel ? e(React.Fragment, null,
-                  e("div", { className: "asset-detail-section-title" }, t.goalPanel),
-                  e("div", { className: "inline-form" },
-                    e("textarea", {
-                      value: goalDraft,
-                      onChange: (event) => setGoalDraft(event.target.value),
-                      rows: 3,
-                      placeholder: t.goalSummaryPlaceholder,
-                    }),
-                    e("div", { className: "row wrap" },
-                      e("button", { className: "ghost", onClick: handleGoalDraft, type: "button" }, t.goalDraft),
-                      e("button", { onClick: () => handleGoalStatus("confirmed"), type: "button" }, t.goalConfirm),
-                      e("button", { className: "ghost", onClick: () => handleGoalStatus("revised"), type: "button" }, t.goalRevise),
-                    ),
-                  ),
-                ) : null,
-                e("div", { className: "asset-detail-meta" }, `${t.selectedAsset}: ${selectedDrop.type} · ${selectedDrop.layer} · ${selectedDrop.priority}`),
-                e("div", { className: "inline-form" },
-                  e("textarea", {
-                    value: editedSummary,
-                    onChange: (event) => setEditedSummary(event.target.value),
-                    rows: 4,
-                  }),
-                  e("button", { onClick: handleSaveSummary, type: "button" }, t.saveSummary),
-                ),
-                e("div", { className: "asset-detail-summary" }, selectedSummary),
-                e("div", { className: "asset-detail-section-title" }, t.connectRelation),
-                e("div", { className: "inline-form" },
-                  e("select", {
-                    value: connectTargetId,
-                    onChange: (event) => setConnectTargetId(event.target.value),
-                  },
-                    e("option", { value: "" }, t.noSelection),
-                    visibleDrops
-                      .filter((drop) => drop.dropId !== selectedDrop.dropId)
-                      .map((drop) => e("option", { key: drop.dropId, value: drop.dropId }, drop.title)),
-                  ),
-                  e("select", {
-                    value: connectType,
-                    onChange: (event) => setConnectType(event.target.value),
-                  },
-                    ["references", "supports", "implements", "constrains", "derives"].map((item) => e("option", { key: item, value: item }, item)),
-                  ),
-                  e("button", { onClick: handleConnectRelation, type: "button" }, t.connectRelation),
-                ),
-                latestAutomation ? e("div", { className: "asset-detail-section-title" }, t.automation) : null,
-                latestAutomation ? e("div", { className: "conversation-list scrollable" },
-                  latestAutomation.decisions?.map((decision) => e("div", { key: decision.decisionId, className: "conversation-item system" },
-                    e("div", { className: "conversation-role" }, `${decision.kind} · ${decision.source} · ${decision.applied ? t.applied : t.deferred}`),
-                    e("div", { className: "conversation-content" }, `${decision.proposedValue}\n${decision.applied ? decision.appliedReason : decision.deferredReason}`),
-                  )),
-                ) : null,
-                latestVerifyCycle ? e("div", { className: "asset-detail-section-title" }, t.verifyRoute) : null,
-                latestVerifyCycle ? e("div", { className: "muted-note" }, `${latestVerifyCycle.routeExecution?.route} · ${latestVerifyCycle.routeExecution?.actions?.join(", ")}`) : null,
-                latestVerifyCycle?.priorityLifecycleAudits?.length ? e("div", { className: "asset-detail-section-title" }, t.priorityAudit) : null,
-                latestVerifyCycle?.priorityLifecycleAudits?.length ? e("div", { className: "conversation-list scrollable" },
-                  latestVerifyCycle.priorityLifecycleAudits.map((audit) => e("div", { key: `${audit.dropId}-${audit.createdAt}`, className: "conversation-item system" },
-                    e("div", { className: "conversation-role" }, `${audit.dropId} · ${audit.decision}`),
-                    e("div", { className: "conversation-content" }, `${audit.from} -> ${audit.to}\n${audit.reason}`),
-                  )),
-                ) : null,
-                latestVerify ? e("div", { className: "asset-detail-section-title" }, t.acceptance) : null,
-                latestVerify ? e("div", { className: "conversation-list scrollable" },
-                  latestVerify.acceptanceItems?.map((item) => e("div", { key: item.itemId, className: "conversation-item system" },
-                    e("div", { className: "conversation-role" }, `${item.itemId} · ${item.status}`),
-                    e("div", { className: "conversation-content" }, `${item.title}\n${item.evidence?.map((entry) => `${entry.kind}:${entry.ref}:${entry.detail}`).join("\n") || item.uncoveredReason || ""}`),
-                  )),
-                ) : null,
-                e("div", { className: "asset-detail-section-title" }, t.conversation),
-                conversationItems.length
-                  ? e("div", { className: "conversation-list scrollable" }, conversationItems.map((item) => e("div", { key: item.messageId, className: `conversation-item ${item.role}` }, e("div", { className: "conversation-role" }, `${item.scope} · ${item.role}`), e("div", { className: "conversation-content" }, item.content))))
-                  : e("div", { className: "muted-note" }, t.noConversation),
-              )
-            : e("div", { className: "muted-note" }, t.selectAssetTip),
-        ),
-        e("div", { className: "composer-dock" },
-          e("div", { className: "scope-chip" }, selectedDrop ? t.assetScope : t.globalScope),
-          e("textarea", {
-            value: llmInput,
-            onChange: (event) => setLlmInput(event.target.value),
-            rows: 3,
-            placeholder: selectedDrop ? t.llmPlaceholderAsset : t.llmPlaceholderGlobal,
-          }),
-          selectedDrop ? e("div", { className: "composer-selected-asset" }, `${t.activeAsset}: ${selectedDrop.title}`) : null,
-          e("button", { onClick: handleSend, type: "button" }, t.send),
-        ),
-        e("button", { className: "add-asset-fab", onClick: () => setAssetModalOpen(true), type: "button" }, t.addAsset),
+        e("button", {
+          className: "ghost small-button",
+          onClick: () => setLanguage((value) => value === "zh" ? "en" : "zh"),
+          type: "button",
+        }, `${t.language}: ${language === "zh" ? t.languageEn : t.languageZh}`),
       ),
-    ),
-    assetModalOpen ? e("div", { className: "modal-backdrop", onClick: () => setAssetModalOpen(false) },
-      e("div", { className: "asset-modal", onClick: (event) => event.stopPropagation(), onDragOver: (event) => event.preventDefault(), onDrop: handleDropFiles },
-        e("div", { className: "sidebar-head" },
-          e("div", { className: "sidebar-title" }, t.addAssetTitle),
-          e("button", { className: "ghost", onClick: () => setAssetModalOpen(false), type: "button" }, t.close),
+      e("div", { className: "hero-status-row" },
+        e("span", { className: statusClass(loop.status) }, loop.statusLabel),
+        loop.latestResult ? e("span", { className: statusClass(loop.latestResult.label) }, `${t.trust}: ${loop.latestResult.label}`) : null,
+        state.project?.name ? e("span", { className: statusClass("neutral") }, state.project.name) : null,
+      ),
+      e("div", { className: "hero-grid" },
+        e("article", { className: "hero-block" },
+          e("div", { className: "hero-label" }, t.currentGoal),
+          e("div", { className: "hero-value" }, loop.currentGoalSummary || t.noGoal),
         ),
-        e("div", { className: "asset-intake-hint" }, t.addAssetHint),
-        e("label", null, t.assetText, e("textarea", { value: assetInput, onChange: (event) => setAssetInput(event.target.value), rows: 8, placeholder: t.assetTextPlaceholder })),
-        e("label", { className: "file-drop-label" },
-          t.dropFiles,
+        e("article", { className: "hero-block" },
+          e("div", { className: "hero-label" }, t.currentArtifact),
+          e("div", { className: "hero-value" }, loop.latestArtifact?.excerpt || t.noArtifact),
+        ),
+        e("article", { className: "hero-block" },
+          e("div", { className: "hero-label" }, t.nextCheckpoint),
+          e("div", { className: "hero-value" }, loop.nextCheckpoint?.title || t.noCheckpoint),
+          e("div", { className: "hero-note" }, loop.nextCheckpoint?.summary || ""),
+        ),
+      ),
+      e("button", { className: "primary-cta", onClick: handlePrimaryAction, type: "button" }, loop.primaryAction.label),
+      e("p", { className: "primary-detail" }, `${t.primaryAction}: ${loop.primaryAction.detail}`),
+    ),
+    e("section", { className: "default-grid" },
+      e("article", { className: "panel" },
+        e("div", { className: "panel-title" }, t.materialTitle),
+        e("p", { className: "panel-hint" }, t.materialHint),
+        e("textarea", {
+          className: "panel-textarea",
+          value: assetInput,
+          onChange: (event) => setAssetInput(event.target.value),
+          rows: 7,
+          placeholder: t.materialPlaceholder,
+        }),
+        e("label", { className: "file-picker" },
+          t.queuedFiles,
           e("input", { type: "file", multiple: true, onChange: handleFileInput }),
         ),
         e("div", { className: "file-queue" },
           queuedFiles.length
-            ? queuedFiles.map((file, index) => e("div", { key: `${file.name}-${index}`, className: "file-chip" }, file.name))
-            : e("div", { className: "muted-note" }, t.noFiles),
+            ? queuedFiles.map((file, index) => e("span", { key: `${file.name}-${index}`, className: "file-chip" }, file.name))
+            : e("span", { className: "muted-note" }, t.noFiles),
         ),
-        e("div", { className: "row" },
-          e("button", { onClick: handleAddAssets, type: "button" }, t.confirmAdd),
-          e("button", { className: "ghost", onClick: () => setAssetModalOpen(false), type: "button" }, t.cancel),
+        e("button", { className: "ghost", onClick: handleAddAssets, type: "button" }, t.addMaterial),
+      ),
+      e("article", { className: "panel" },
+        e("div", { className: "panel-title" }, t.goalTitle),
+        e("p", { className: "panel-hint" }, t.goalHint),
+        e("textarea", {
+          className: "panel-textarea",
+          value: goalDraft,
+          onChange: (event) => setGoalDraft(event.target.value),
+          rows: 7,
+          placeholder: t.goalPlaceholder,
+        }),
+        e("div", { className: "button-row" },
+          e("button", { className: "ghost", onClick: handleGoalDraft, type: "button" }, t.draftGoal),
+          e("button", { className: "ghost", onClick: () => handleGoalStatus("revised"), type: "button" }, t.reviseGoal),
+          e("button", { className: "ghost", onClick: () => handleGoalStatus("confirmed"), type: "button" }, t.confirmGoal),
         ),
       ),
-    ) : null,
+      e("article", { className: "panel" },
+        e("div", { className: "panel-title" }, t.artifactTitle),
+        e("p", { className: "panel-hint" }, t.artifactHint),
+        loop.latestArtifact
+          ? e(React.Fragment, null,
+              e("div", { className: "artifact-excerpt" }, loop.latestArtifact.excerpt),
+              e("div", { className: "meta-list" },
+                e("span", null, `${t.artifactCoverage}: ${loop.latestArtifact.coverageDropCount}`),
+                loop.latestArtifact.acceptedAt ? e("span", null, `${t.acceptedAt}: ${loop.latestArtifact.acceptedAt}`) : null,
+                e("span", null, loop.latestArtifact.createdAt),
+              ),
+            )
+          : e("div", { className: "empty-state" }, t.noArtifact),
+        loop.latestResult
+          ? e("div", { className: "result-summary" },
+              e("div", { className: "result-label" }, `${t.resultSummary}: ${loop.latestResult.label}`),
+              e("div", null, loop.latestResult.summary),
+            )
+          : null,
+      ),
+      e("article", { className: "panel" },
+        e("div", { className: "panel-title" }, t.checkpointTitle),
+        e("p", { className: "panel-hint" }, t.checkpointHint),
+        loop.reviewCheckpoints.length
+          ? e("div", { className: "checkpoint-list" },
+              loop.reviewCheckpoints.map((checkpoint) => e("div", { key: checkpoint.checkpointId, className: "checkpoint-card" },
+                e("div", { className: "checkpoint-title" }, checkpoint.title),
+                e("div", { className: "checkpoint-summary" }, checkpoint.summary),
+                e("div", { className: "checkpoint-meta" }, `${checkpoint.nextAction.label} · ${checkpoint.source}`),
+              )),
+            )
+          : e("div", { className: "empty-state" }, t.noReview),
+      ),
+    ),
+    e("details", { className: "diagnostics-shell" },
+      e("summary", null, t.diagnostics),
+      e("p", { className: "panel-hint diagnostics-hint" }, t.diagnosticsHint),
+      e("section", { className: "diagnostics-grid" },
+        e("article", { className: "panel diagnostics-panel" },
+          e("div", { className: "panel-title" }, t.manualControls),
+          e("div", { className: "button-row" },
+            e("button", { className: "ghost", onClick: () => runManual("/api/deep-organize", "ui.manual.organize"), type: "button" }, t.organize),
+            e("button", { className: "ghost", onClick: () => runManual("/api/dry-run"), type: "button" }, t.preflight),
+            e("button", { className: "ghost", onClick: () => runManual("/api/generate"), type: "button" }, t.generate),
+            e("button", { className: "ghost", onClick: () => runManual("/api/verify"), type: "button" }, t.verify),
+          ),
+          e("div", { className: "meta-stack" },
+            e("div", null, `${t.status}: ${loop.statusLabel}`),
+            e("div", null, `${t.packetSummary}: ${latestPacket?.response?.summary || "-"}`),
+            e("div", null, `${t.proposalSummary}: ${latestProposal?.summary || "-"}`),
+          ),
+        ),
+        e("article", { className: "panel diagnostics-panel" },
+          e("div", { className: "panel-title" }, t.materials),
+          e("div", { className: "material-list" },
+            visibleDrops.map((drop) => e("button", {
+              key: drop.dropId,
+              className: `material-item ${selectedDropId === drop.dropId ? "selected" : ""}`,
+              onClick: () => setSelectedDropId(drop.dropId),
+              type: "button",
+            },
+            e("div", { className: "material-title" }, drop.title),
+            e("div", { className: "material-meta" }, `${drop.type} · ${drop.layer} · ${drop.priority}`),
+            )),
+          ),
+          selectedDrop
+            ? e("div", { className: "selected-panel" },
+                e("div", { className: "panel-title minor" }, selectedDrop.title),
+                e("textarea", {
+                  className: "panel-textarea compact",
+                  value: editedSummary,
+                  onChange: (event) => setEditedSummary(event.target.value),
+                  rows: 4,
+                }),
+                e("button", { className: "ghost", onClick: handleSaveSummary, type: "button" }, t.saveSummary),
+                e("div", { className: "panel-title minor" }, t.connectRelation),
+                e("select", { className: "panel-select", value: connectTargetId, onChange: (event) => setConnectTargetId(event.target.value) },
+                  e("option", { value: "" }, t.noSelection),
+                  visibleDrops.filter((drop) => drop.dropId !== selectedDrop.dropId)
+                    .map((drop) => e("option", { key: drop.dropId, value: drop.dropId }, drop.title)),
+                ),
+                e("select", { className: "panel-select", value: connectType, onChange: (event) => setConnectType(event.target.value) },
+                  ["references", "supports", "implements", "constrains", "derives"].map((item) => e("option", { key: item, value: item }, item)),
+                ),
+                e("button", { className: "ghost", onClick: handleConnectRelation, type: "button" }, t.connectRelation),
+              )
+            : e("div", { className: "empty-state" }, t.selectMaterial),
+        ),
+        e("article", { className: "panel diagnostics-panel" },
+          e("div", { className: "panel-title" }, t.conversation),
+          selectedDrop ? e("div", { className: "meta-list" }, e("span", null, `${t.activeMaterial}: ${selectedDrop.title}`)) : null,
+          e("div", { className: "conversation-list" },
+            conversations.length
+              ? conversations.map((item) => e("div", { key: item.messageId, className: `conversation-item ${item.role}` },
+                  e("div", { className: "conversation-role" }, `${item.scope} · ${item.role}`),
+                  e("div", { className: "conversation-content" }, item.content),
+                ))
+              : e("div", { className: "empty-state" }, t.noConversations),
+          ),
+          e("textarea", {
+            className: "panel-textarea compact",
+            value: llmInput,
+            onChange: (event) => setLlmInput(event.target.value),
+            rows: 4,
+            placeholder: selectedDrop ? t.conversationPlaceholderAsset : t.conversationPlaceholderGlobal,
+          }),
+          e("button", { className: "ghost", onClick: handleSend, type: "button" }, t.send),
+        ),
+        e("article", { className: "panel diagnostics-panel" },
+          e("div", { className: "panel-title" }, t.rawRuntime),
+          e("div", { className: "panel-title minor" }, t.automation),
+          latestAutomation?.decisions?.length
+            ? e("div", { className: "checkpoint-list compact-list" },
+                latestAutomation.decisions.map((decision) => e("div", { key: decision.decisionId, className: "checkpoint-card" },
+                  e("div", { className: "checkpoint-title" }, `${decision.kind} · ${decision.approvalClass}`),
+                  e("div", { className: "checkpoint-summary" }, decision.proposedValue),
+                  e("div", { className: "checkpoint-meta" }, `${decision.confidence} · ${decision.applied ? "applied" : "deferred"}`),
+                )),
+              )
+            : e("div", { className: "empty-state" }, t.noAutomation),
+          e("div", { className: "panel-title minor" }, t.acceptance),
+          latestVerify?.acceptanceItems?.length
+            ? e("div", { className: "checkpoint-list compact-list" },
+                latestVerify.acceptanceItems.map((item) => e("div", { key: item.itemId, className: "checkpoint-card" },
+                  e("div", { className: "checkpoint-title" }, `${item.title} · ${item.status}`),
+                  e("div", { className: "checkpoint-summary" }, item.uncoveredReason || item.evidence.map((entry) => `${entry.kind}:${entry.ref}`).join(", ") || "-"),
+                )),
+              )
+            : e("div", { className: "empty-state" }, t.noAcceptance),
+          latestVerifyCycle ? e("div", { className: "meta-stack" },
+            e("div", null, `${t.status}: ${latestVerifyCycle.routeExecution?.route || "-"}`),
+            e("div", null, `${t.evidence}: ${(latestVerifyCycle.routeExecution?.evidence || []).join(" | ") || "-"}`),
+          ) : null,
+        ),
+      ),
+    ),
   );
 }
 

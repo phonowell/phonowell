@@ -11,7 +11,29 @@
 - acceptance source: `drop-canon-acceptance-contract`
 - delivery target: `drop-canon-v1-delivery`
 
-## Stage Summary
+## Default Public Journey
+
+The default product journey is:
+
+1. add material
+2. confirm or revise goal
+3. continue loop or review requested checkpoint
+4. accept final artifact direction
+
+The user does not manually run `organize`, `preflight`, `generate`, and `verify` as the primary path.
+Those remain internal stages that the assistant loop may advance through on the user's behalf.
+
+## Assistant Loop Contract
+
+- public loop status: `idle | running | blocked | complete | failed`
+- one loop run advances from current state until one user-meaningful checkpoint:
+- `blocked`: user input, review, or correction is required
+- `complete`: current artifact/result is ready for acceptance judgment or has already been explicitly accepted
+- `failed`: execution failed and diagnostics should explain why
+- organize, dry-run, generate, and verify stay explicit in audit records even when hidden from the default surface
+- final user acceptance is a separate persisted decision, not just a loop status label
+
+## Internal Stage Summary
 
 1. Goal-Origin Init
 - AI drafts goal-origin
@@ -63,6 +85,7 @@
 - default workflow keeps user actions minimal
 - complexity handling is delegated to AI and protocol automation
 - advanced controls should be optional and progressive
+- manual stage controls require justification tied to trust, safety, or correction cost
 
 ## Re-evaluation Trigger
 

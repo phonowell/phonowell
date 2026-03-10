@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type {
+  AssistantLoopState,
   AutomationDecision,
   AutomationTaskRecord,
   AssetDomain,
@@ -16,8 +17,10 @@ import type {
   DryRunReport,
   DryRunStatus,
   GenerationDiff,
+  MainLoopAction,
   MicroLifecycleSummary,
   MainLoopSnapshot,
+  MainLoopResultSummary,
   PacketContext,
   PacketRecord,
   PacketStage,
@@ -26,6 +29,7 @@ import type {
   ProjectState,
   Relation,
   RelationType,
+  ReviewCheckpoint,
   ConversationMessage,
   RunLog,
   VerifyRouteExecution,
@@ -102,6 +106,29 @@ function makeCanonicalDrop(wellId: string, asset: CatalogAsset, createdAt: strin
   };
 }
 
+function makeMainLoopAction(
+  key: MainLoopAction["key"],
+  label: string,
+  detail: string,
+): MainLoopAction {
+  return { key, label, detail };
+}
+
+function makeDefaultAssistantLoopState(createdAt = nowIso()): AssistantLoopState {
+  return {
+    status: "idle",
+    userState: "needs-input",
+    statusLabel: "Idle",
+    summary: "Add material to start the assistant loop.",
+    nextAction: makeMainLoopAction(
+      "add-material",
+      "Add material",
+      "Drop source material so the assistant has concrete input to organize.",
+    ),
+    updatedAt: createdAt,
+  };
+}
+
 export class PhonoWellEngine {
   private readonly catalog: CatalogAsset[];
 
@@ -127,6 +154,7 @@ export class PhonoWellEngine {
         "reuse first",
       ],
       acceptanceDropId: "drop-canon-acceptance-contract",
+      acceptanceStatus: "pending",
       status: "goal-origin-init",
       dryRunStatus: "warn",
       createdAt,
@@ -165,6 +193,7 @@ export class PhonoWellEngine {
       unresolvedQuestions: [],
       assetConversations: [],
       automationTasks: [],
+      assistantLoop: makeDefaultAssistantLoopState(createdAt),
     };
   }
 
@@ -182,6 +211,7 @@ export class PhonoWellEngine {
         payload: { originDropId: this.state.well.originDropId ?? null },
       });
     }
+    this.refreshAssistantLoop();
     return this.getState();
   }
 
@@ -236,6 +266,8 @@ export class PhonoWellEngine {
     this.state.unresolvedQuestions = synced.unresolvedQuestions;
     this.state.assetConversations = synced.assetConversations ?? [];
     this.state.automationTasks = synced.automationTasks ?? [];
+    this.state.assistantLoop = synced.assistantLoop ?? makeDefaultAssistantLoopState();
+    this.refreshAssistantLoop(this.state.assistantLoop.lastError);
     return this.getState();
   }
 
@@ -314,7 +346,9 @@ export class PhonoWellEngine {
         },
       ],
     })));
-    return applyActionResult(this.state, setAcceptanceTraceLinksAction(this.state, dropId, drop.acceptanceTraceLinks ?? []));
+    const updated = applyActionResult(this.state, setAcceptanceTraceLinksAction(this.state, dropId, drop.acceptanceTraceLinks ?? []));
+    this.refreshAssistantLoop();
+    return updated;
   }
 
   private inferSummaryCandidate(drop: Drop): AutomationDecision {
@@ -335,6 +369,7 @@ export class PhonoWellEngine {
       decisionId: `decision-${randomUUID().slice(0, 8)}`,
       kind: "summary",
       source: "heuristic",
+      approvalClass: applied ? "auto-apply" : "review-required",
       targetDropId: drop.dropId,
       proposedValue: proposedSummary,
       confidence,
@@ -375,6 +410,7 @@ export class PhonoWellEngine {
         decisionId: `decision-${randomUUID().slice(0, 8)}`,
         kind: item.kind,
         source: "heuristic",
+        approvalClass: applied ? "auto-apply" : "user-only",
         targetDropId: drop.dropId,
         proposedValue: item.proposedValue,
         confidence: item.confidence,
@@ -394,20 +430,27 @@ export class PhonoWellEngine {
       return decisions;
     }
     const alreadyConnected = this.state.relations.some((rel) => rel.fromDropId === drop.dropId || rel.toDropId === drop.dropId);
-    const confidence = alreadyConnected ? 0.98 : 0.9;
-    if (!alreadyConnected) {
+    const relationHintLength = (drop.summary || "").trim().length;
+    const confidence = alreadyConnected ? 0.98 : relationHintLength >= 36 ? 0.9 : 0.62;
+    const applied = !alreadyConnected && confidence >= 0.85;
+    if (applied) {
       this.connectDrops(goalId, drop.dropId, "implements");
     }
     decisions.push({
       decisionId: `decision-${randomUUID().slice(0, 8)}`,
       kind: "relation",
       source: "heuristic",
+      approvalClass: alreadyConnected || applied ? "auto-apply" : "review-required",
       targetDropId: drop.dropId,
       proposedValue: `${goalId}->${drop.dropId}:implements`,
       confidence,
-      applied: !alreadyConnected,
-      evidence: [`goal=${goalId}`, `connected=${String(alreadyConnected)}`],
-      ...(!alreadyConnected ? { appliedReason: "missing relation to goal origin" } : { deferredReason: "relation already present" }),
+      applied,
+      evidence: [`goal=${goalId}`, `connected=${String(alreadyConnected)}`, `summary-length=${relationHintLength}`],
+      ...(alreadyConnected
+        ? { deferredReason: "relation already present" }
+        : applied
+          ? { appliedReason: "missing relation to goal origin" }
+          : { deferredReason: "relation confidence too low; review before linking to goal" }),
       createdAt: nowIso(),
     });
     return decisions;
@@ -420,6 +463,7 @@ export class PhonoWellEngine {
       decisionId: `decision-${randomUUID().slice(0, 8)}`,
       kind: "conflict",
       source: "heuristic",
+      approvalClass: "user-only",
       targetDropId: drop.dropId,
       proposedValue: evidence[0] ?? "no conflict hint",
       confidence,
@@ -462,6 +506,7 @@ export class PhonoWellEngine {
         decisionId: `decision-${randomUUID().slice(0, 8)}`,
         kind: "preflight",
         source: "system-rule",
+        approvalClass: "auto-apply",
         targetDropId: drop.dropId,
         proposedValue: preflight.gateResult,
         confidence: 1,
@@ -518,6 +563,9 @@ export class PhonoWellEngine {
         },
       });
       updated.push(structuredClone(task));
+    }
+    if (updated.length > 0) {
+      this.refreshAssistantLoop();
     }
     return updated;
   }
@@ -656,6 +704,7 @@ export class PhonoWellEngine {
 
   setProject(project: ProjectState): WellState {
     this.state.project = project;
+    this.refreshAssistantLoop();
     return this.getState();
   }
 
@@ -694,15 +743,21 @@ export class PhonoWellEngine {
   }
 
   setWish(input: { wish: string; definitionOfDone: string[]; constraints: string[] }): Well {
-    return applyActionResult(this.state, setWishAction(this.state, input));
+    const well = applyActionResult(this.state, setWishAction(this.state, input));
+    this.refreshAssistantLoop();
+    return well;
   }
 
   ensureGoalOriginDraft(): Drop {
-    return applyActionResult(this.state, ensureGoalOriginDraftAction(this.state));
+    const goal = applyActionResult(this.state, ensureGoalOriginDraftAction(this.state));
+    this.refreshAssistantLoop();
+    return goal;
   }
 
   updateGoalOrigin(input: { title?: string; summary?: string; status?: "draft" | "confirmed" | "revised" }): Drop {
-    return applyActionResult(this.state, updateGoalOriginAction(this.state, input));
+    const goal = applyActionResult(this.state, updateGoalOriginAction(this.state, input));
+    this.refreshAssistantLoop();
+    return goal;
   }
 
   ingestDrop(input: {
@@ -722,23 +777,33 @@ export class PhonoWellEngine {
     skipAutoFlow?: boolean;
     preserveOrphan?: boolean;
   }): Drop {
-    return applyActionResult(this.state, ingestDropAction(this.state, input));
+    const drop = applyActionResult(this.state, ingestDropAction(this.state, input));
+    this.refreshAssistantLoop();
+    return drop;
   }
 
   updateDrop(dropId: string, input: Partial<Pick<Drop, "summary" | "title" | "position">> & { skipAutoFlow?: boolean }): Drop {
-    return applyActionResult(this.state, updateDropAction(this.state, dropId, input));
+    const drop = applyActionResult(this.state, updateDropAction(this.state, dropId, input));
+    this.refreshAssistantLoop();
+    return drop;
   }
 
   connectDrops(fromDropId: string, toDropId: string, relationType: RelationType = "references"): Relation {
-    return applyActionResult(this.state, connectDropsAction(this.state, fromDropId, toDropId, relationType));
+    const relation = applyActionResult(this.state, connectDropsAction(this.state, fromDropId, toDropId, relationType));
+    this.refreshAssistantLoop();
+    return relation;
   }
 
   removeRelation(relationId: string): boolean {
-    return applyActionResult(this.state, removeRelationAction(this.state, relationId));
+    const removed = applyActionResult(this.state, removeRelationAction(this.state, relationId));
+    this.refreshAssistantLoop();
+    return removed;
   }
 
   setUnresolvedQuestions(questions: string[]): string[] {
-    return applyActionResult(this.state, updateUnresolvedQuestionsAction(this.state, questions));
+    const updated = applyActionResult(this.state, updateUnresolvedQuestionsAction(this.state, questions));
+    this.refreshAssistantLoop();
+    return updated;
   }
 
   addConversationMessage(input: {
@@ -837,6 +902,7 @@ export class PhonoWellEngine {
       throw new Error(`proposal not found: ${proposalId}`);
     }
     this.applyProposal(proposal);
+    this.refreshAssistantLoop();
     return structuredClone(proposal);
   }
 
@@ -853,6 +919,7 @@ export class PhonoWellEngine {
       summary: "proposal.rejected",
       payload: { proposalId },
     });
+    this.refreshAssistantLoop();
     return structuredClone(proposal);
   }
 
@@ -980,6 +1047,7 @@ export class PhonoWellEngine {
         gapFillProposalId: gapFillProposal?.proposalId ?? null,
       },
     });
+    this.refreshAssistantLoop();
 
     return {
       analyzePacket: structuredClone(analyzePacket),
@@ -989,12 +1057,393 @@ export class PhonoWellEngine {
     };
   }
 
+  private makeLoopAction(key: MainLoopAction["key"]): MainLoopAction {
+    switch (key) {
+      case "add-material":
+        return {
+          key,
+          label: "Add material",
+          detail: "Drop notes, files, or links so the assistant has source material.",
+        };
+      case "confirm-goal":
+        return {
+          key,
+          label: "Confirm goal",
+          detail: "Check the goal summary before the assistant generates a candidate.",
+        };
+      case "review-checkpoint":
+        return {
+          key,
+          label: "Review requested changes",
+          detail: "The assistant found an ambiguous or risky change that needs your decision.",
+        };
+      case "accept-direction":
+        return {
+          key,
+          label: "Accept current direction",
+          detail: "The current artifact has enough evidence for an acceptance judgment.",
+        };
+      default:
+        return {
+          key,
+          label: "Continue",
+          detail: "Let the assistant continue from the recorded state.",
+        };
+    }
+  }
+
+  private summarizeCandidateContent(content: string): string {
+    return content.replace(/\s+/g, " ").trim().slice(0, 280);
+  }
+
+  private buildLatestArtifactSummary(): MainLoopSnapshot["latestArtifact"] {
+    const latestCandidate = this.state.candidates[0];
+    if (!latestCandidate) {
+      return undefined;
+    }
+    const accepted = this.state.well.acceptanceStatus === "accepted"
+      && this.state.well.acceptedCandidateId === latestCandidate.candidateId;
+    return {
+      candidateId: latestCandidate.candidateId,
+      excerpt: this.summarizeCandidateContent(latestCandidate.content),
+      createdAt: latestCandidate.createdAt,
+      coverageDropCount: latestCandidate.coverageDropIds.length,
+      accepted,
+      acceptedAt: accepted ? this.state.well.acceptedAt : undefined,
+    };
+  }
+
+  private labelForUserState(userState: MainLoopResultSummary["trust"]): MainLoopResultSummary["label"] {
+    switch (userState) {
+      case "ready":
+        return "ready";
+      case "needs-input":
+        return "needs input";
+      case "risk-found":
+        return "risk found";
+      default:
+        return "evidence attached";
+    }
+  }
+
+  private getCurrentCandidateVerifyReport(): VerifyReport | undefined {
+    const latestVerify = this.state.verifyReports[0];
+    const latestCandidate = this.state.candidates[0];
+    if (!latestVerify || !latestCandidate) {
+      return undefined;
+    }
+    return latestVerify.createdAt >= latestCandidate.createdAt ? latestVerify : undefined;
+  }
+
+  private buildLatestResultSummary(): MainLoopResultSummary | undefined {
+    const latestVerify = this.getCurrentCandidateVerifyReport();
+    const latestDryRun = this.state.well.dryRunReport;
+    if (latestVerify) {
+      const trust = latestVerify.pass
+        ? "ready"
+        : latestVerify.acceptanceItems.some((item) => item.evidence.length > 0)
+          ? "evidence-attached"
+          : "risk-found";
+      const summary = latestVerify.pass
+        ? `Evidence is attached for ${latestVerify.changedDropCoverage.length} changed items.`
+        : latestVerify.issues[0] ?? "The current candidate still has review risks.";
+      return {
+        trust,
+        label: this.labelForUserState(trust),
+        summary,
+        evidenceCount: latestVerify.acceptanceItems.reduce((count, item) => count + item.evidence.length, 0),
+        changedDropCount: latestVerify.changedDropIds.length,
+        createdAt: latestVerify.createdAt,
+      };
+    }
+    if (latestDryRun) {
+      const trust = latestDryRun.gateResult === "fail" ? "risk-found" : latestDryRun.gateResult === "warn" ? "needs-input" : "evidence-attached";
+      return {
+        trust,
+        label: this.labelForUserState(trust),
+        summary: latestDryRun.gateResult === "fail"
+          ? "The current material still has blocking risks."
+          : latestDryRun.gateResult === "warn"
+            ? "The current material can move forward, but there are review risks to inspect."
+            : "Preflight evidence is attached for the current state.",
+        evidenceCount: latestDryRun.checks.reduce((count, item) => count + item.evidence.length, 0),
+        changedDropCount: this.state.pendingChangedDropIds.length,
+        createdAt: latestDryRun.createdAt,
+      };
+    }
+    return undefined;
+  }
+
+  private isAutomationDecisionStillPending(decision: AutomationDecision): boolean {
+    if (decision.applied || decision.approvalClass !== "review-required" || !decision.targetDropId) {
+      return false;
+    }
+
+    const targetDrop = this.state.drops.find((drop) => drop.dropId === decision.targetDropId);
+    if (!targetDrop) {
+      return false;
+    }
+
+    if (decision.kind === "summary") {
+      const summary = targetDrop.summary.trim();
+      if (summary === decision.proposedValue) {
+        return false;
+      }
+      return summary.length < 40;
+    }
+
+    if (decision.kind === "relation") {
+      const match = decision.proposedValue.match(/^(.+?)->(.+?):(constrains|supports|references|derives|implements)$/);
+      if (!match) {
+        return false;
+      }
+      const [, fromDropId, toDropId, relationType] = match;
+      const relationExists = this.state.relations.some((relation) =>
+        relation.fromDropId === fromDropId
+        && relation.toDropId === toDropId
+        && relation.relationType === relationType,
+      );
+      if (relationExists) {
+        return false;
+      }
+      return targetDrop.updatedAt <= decision.createdAt;
+    }
+
+    return false;
+  }
+
+  private buildReviewCheckpoints(): ReviewCheckpoint[] {
+    const checkpoints: ReviewCheckpoint[] = [];
+    const goal = this.state.drops.find((drop) => drop.type === "goal-origin");
+
+    if (!goal || (goal.goalStatus ?? "draft") !== "confirmed") {
+      checkpoints.push({
+        checkpointId: "checkpoint-goal",
+        kind: "input",
+        title: "Confirm the goal",
+        summary: "The assistant needs a confirmed goal before it can generate a stable artifact.",
+        source: "goal",
+        targetDropId: goal?.dropId,
+        nextAction: this.makeLoopAction("confirm-goal"),
+        evidence: [goal?.summary ?? "goal summary missing"],
+        createdAt: goal?.updatedAt ?? nowIso(),
+      });
+    }
+
+    for (const task of this.state.automationTasks.slice(0, 5)) {
+      for (const decision of task.decisions.filter((item) => this.isAutomationDecisionStillPending(item))) {
+        const targetTitle = this.state.drops.find((drop) => drop.dropId === decision.targetDropId)?.title ?? "selected material";
+        checkpoints.push({
+          checkpointId: `checkpoint-${decision.decisionId}`,
+          kind: "review",
+          title: decision.kind === "relation" ? "Review a suggested connection" : "Review a suggested summary",
+          summary: `${targetTitle}: ${decision.appliedReason ?? decision.deferredReason ?? decision.proposedValue}`,
+          source: "automation",
+          targetDropId: decision.targetDropId,
+          approvalClass: decision.approvalClass,
+          nextAction: this.makeLoopAction("review-checkpoint"),
+          evidence: [...decision.evidence.slice(0, 3), `confidence=${decision.confidence}`],
+          createdAt: decision.createdAt,
+        });
+      }
+    }
+
+    if (this.state.unresolvedQuestions.length > 0) {
+      checkpoints.push({
+        checkpointId: "checkpoint-unresolved",
+        kind: "input",
+        title: "Resolve the next question",
+        summary: this.state.unresolvedQuestions[0] ?? "The assistant needs one user decision before continuing.",
+        source: "dry-run",
+        nextAction: this.makeLoopAction("review-checkpoint"),
+        evidence: this.state.unresolvedQuestions.slice(0, 3),
+        createdAt: nowIso(),
+      });
+    }
+
+    const latestDryRun = this.state.well.dryRunReport;
+    if (latestDryRun?.gateResult === "fail") {
+      let summary = "The current material is still blocked by a preflight risk.";
+      if (latestDryRun.assetOrphanCount > 0) {
+        summary = "Some material is still disconnected, so the assistant cannot trust the next artifact.";
+      } else if (latestDryRun.missingRequiredCapabilityCount > 0) {
+        summary = "The goal or required coverage is still incomplete.";
+      } else if (latestDryRun.highConflictCount > 0) {
+        summary = "There is still a blocking conflict or unanswered question.";
+      }
+      checkpoints.push({
+        checkpointId: `checkpoint-dry-run-${latestDryRun.createdAt}`,
+        kind: "risk",
+        title: "Review the blocking risk",
+        summary,
+        source: "dry-run",
+        nextAction: this.makeLoopAction("review-checkpoint"),
+        evidence: latestDryRun.checks.filter((item) => item.status === "fail").flatMap((item) => item.evidence).slice(0, 4),
+        createdAt: latestDryRun.createdAt,
+      });
+    }
+
+    const latestVerify = this.getCurrentCandidateVerifyReport();
+    if (latestVerify && !latestVerify.pass) {
+      checkpoints.push({
+        checkpointId: `checkpoint-verify-${latestVerify.createdAt}`,
+        kind: "acceptance",
+        title: "Review the current result risk",
+        summary: latestVerify.issues[0] ?? "The current artifact still needs one more review pass.",
+        source: "verify",
+        nextAction: this.makeLoopAction("review-checkpoint"),
+        evidence: [
+          `changed-drops=${latestVerify.changedDropIds.length}`,
+          `uncovered-items=${latestVerify.uncoveredAcceptanceItemIds.length}`,
+        ],
+        createdAt: latestVerify.createdAt,
+      });
+    }
+
+    return checkpoints.slice(0, 6);
+  }
+
+  private shouldRunDeepOrganize(): boolean {
+    return this.state.pendingChangedDropIds.length > 0
+      || this.state.packetRecords.length === 0
+      || this.state.verifyReports.length === 0;
+  }
+
+  private buildFailureLoopSnapshot(message: string): MainLoopSnapshot {
+    const base = this.getMainLoopSnapshot();
+    return {
+      ...base,
+      status: "failed",
+      userState: "risk-found",
+      statusLabel: "Failed",
+      summary: "The assistant loop stopped because execution failed.",
+      blockedReason: message,
+      primaryAction: this.makeLoopAction("continue-loop"),
+    };
+  }
+
+  private persistAssistantLoop(snapshot: MainLoopSnapshot, lastError?: string): void {
+    this.state.assistantLoop = {
+      status: snapshot.status,
+      userState: snapshot.userState,
+      statusLabel: snapshot.statusLabel,
+      summary: snapshot.summary,
+      blockedReason: snapshot.blockedReason,
+      nextAction: snapshot.primaryAction,
+      updatedAt: nowIso(),
+      lastRunAt: snapshot.lastRunAt,
+      latestCandidateId: snapshot.latestCandidateId,
+      latestVerifyPass: snapshot.latestVerifyPass,
+      ...(lastError ? { lastError } : {}),
+    };
+  }
+
+  private invalidateAcceptedDirectionIfStale(): void {
+    if (this.state.well.acceptanceStatus !== "accepted") {
+      return;
+    }
+    const acceptedCandidateId = this.state.well.acceptedCandidateId;
+    const latestCandidateId = this.state.candidates[0]?.candidateId;
+    const hasChangedInputs = this.state.pendingChangedDropIds.length > 0;
+    const acceptedCandidateStillCurrent = Boolean(acceptedCandidateId) && acceptedCandidateId === latestCandidateId;
+    if (hasChangedInputs || !acceptedCandidateStillCurrent) {
+      this.state.well.acceptanceStatus = "pending";
+      this.state.well.acceptedCandidateId = undefined;
+      this.state.well.acceptedAt = undefined;
+      this.state.well.updatedAt = nowIso();
+    }
+  }
+
+  private refreshAssistantLoop(lastError?: string): void {
+    this.invalidateAcceptedDirectionIfStale();
+    this.persistAssistantLoop(this.getMainLoopSnapshot(), lastError);
+  }
+
   getMainLoopSnapshot(): MainLoopSnapshot {
     const latestProposal = this.state.proposals[0];
     const appliedProposal = this.state.proposals.find((proposal) => proposal.status === "applied");
-    const latestVerify = this.state.verifyReports[0];
+    const latestVerify = this.getCurrentCandidateVerifyReport();
     const lastLog = this.state.runLogs[0];
+    const latestResult = this.buildLatestResultSummary();
+    const reviewCheckpoints = this.buildReviewCheckpoints();
+    const goal = this.state.drops.find((drop) => drop.type === "goal-origin");
+    const hasUserMaterial = this.state.drops.some((drop) => drop.source === "user");
+    const currentGoalSummary = goal?.summary;
+    let status: MainLoopSnapshot["status"] = "idle";
+    let userState: MainLoopSnapshot["userState"] = "evidence-attached";
+    let statusLabel = "Ready to continue";
+    let summary = "The assistant can continue from the recorded state.";
+    let blockedReason: string | undefined;
+    let primaryAction = this.makeLoopAction("continue-loop");
+
+    if (!hasUserMaterial) {
+      status = "blocked";
+      userState = "needs-input";
+      statusLabel = "Needs input";
+      summary = "Add material to give the assistant something real to work with.";
+      blockedReason = summary;
+      primaryAction = this.makeLoopAction("add-material");
+    } else if (!goal || (goal.goalStatus ?? "draft") !== "confirmed") {
+      status = "blocked";
+      userState = "needs-input";
+      statusLabel = "Needs input";
+      summary = "The goal still needs confirmation before the assistant can generate a stable result.";
+      blockedReason = summary;
+      primaryAction = this.makeLoopAction("confirm-goal");
+    } else if (this.state.well.acceptanceStatus === "accepted" && this.state.well.acceptedCandidateId) {
+      status = "complete";
+      userState = "ready";
+      statusLabel = "Accepted";
+      summary = `You accepted the current direction on ${this.state.well.acceptedAt ?? "the latest review"}.`;
+      primaryAction = this.makeLoopAction("continue-loop");
+    } else if (latestVerify?.pass && this.state.pendingChangedDropIds.length === 0) {
+      status = "complete";
+      userState = "ready";
+      statusLabel = "Ready";
+      summary = "The current artifact has attached evidence and is ready for acceptance judgment.";
+      primaryAction = this.makeLoopAction("accept-direction");
+    } else if (reviewCheckpoints.length > 0) {
+      const checkpoint = reviewCheckpoints[0];
+      status = "blocked";
+      userState = checkpoint.kind === "input" ? "needs-input" : "risk-found";
+      statusLabel = checkpoint.kind === "input" ? "Needs input" : "Risk found";
+      summary = checkpoint.summary;
+      blockedReason = checkpoint.summary;
+      primaryAction = checkpoint.nextAction;
+    } else if (latestResult?.trust === "risk-found") {
+      status = "blocked";
+      userState = "risk-found";
+      statusLabel = "Risk found";
+      summary = latestResult.summary;
+      blockedReason = latestResult.summary;
+      primaryAction = this.makeLoopAction("continue-loop");
+    }
+
+    if (this.state.assistantLoop.status === "failed" && this.state.assistantLoop.lastError) {
+      status = "failed";
+      userState = "risk-found";
+      statusLabel = "Failed";
+      summary = "The assistant loop stopped because execution failed.";
+      blockedReason = this.state.assistantLoop.lastError;
+      primaryAction = this.makeLoopAction("continue-loop");
+    }
+
     return {
+      status,
+      userState,
+      statusLabel,
+      summary,
+      blockedReason,
+      primaryAction,
+      currentGoalSummary,
+      latestArtifact: this.buildLatestArtifactSummary(),
+      latestResult,
+      acceptanceStatus: this.state.well.acceptanceStatus,
+      acceptedCandidateId: this.state.well.acceptedCandidateId,
+      acceptedAt: this.state.well.acceptedAt,
+      nextCheckpoint: reviewCheckpoints[0],
+      reviewCheckpoints,
+      openCheckpointCount: reviewCheckpoints.length,
       stageChain: ["asset", "proposal", "gate", "apply", "verify"],
       latestProposalId: latestProposal?.proposalId,
       latestProposalStatus: latestProposal?.status,
@@ -1004,6 +1453,122 @@ export class PhonoWellEngine {
       latestVerifyPass: latestVerify?.pass,
       lastRunAt: lastLog?.createdAt,
     };
+  }
+
+  acceptCurrentDirection(note?: string): MainLoopSnapshot {
+    const snapshot = this.getMainLoopSnapshot();
+    const latestCandidate = this.state.candidates[0];
+    if (!latestCandidate) {
+      throw new Error("accept-direction failed: no candidate artifact");
+    }
+    if (snapshot.status !== "complete" || snapshot.primaryAction.key !== "accept-direction") {
+      throw new Error("accept-direction failed: current result is not ready for acceptance");
+    }
+    const acceptedAt = nowIso();
+    this.state.well.acceptanceStatus = "accepted";
+    this.state.well.acceptedCandidateId = latestCandidate.candidateId;
+    this.state.well.acceptedAt = acceptedAt;
+    this.state.well.updatedAt = acceptedAt;
+    this.pushRunLog({
+      stage: "assistant-loop",
+      status: "pass",
+      summary: "assistant-loop.accepted",
+      payload: {
+        candidateId: latestCandidate.candidateId,
+        acceptedAt,
+        note: note?.trim() || null,
+      },
+    });
+    this.refreshAssistantLoop();
+    return this.getMainLoopSnapshot();
+  }
+
+  async runAssistantLoop(input: { trigger?: string } = {}): Promise<MainLoopSnapshot> {
+    const trigger = input.trigger?.trim() || "manual.assistant-loop";
+    this.state.assistantLoop = {
+      ...this.state.assistantLoop,
+      status: "running",
+      userState: "evidence-attached",
+      statusLabel: "Running",
+      summary: "The assistant is advancing the project from the recorded state.",
+      blockedReason: undefined,
+      nextAction: this.makeLoopAction("continue-loop"),
+      updatedAt: nowIso(),
+      lastRunAt: nowIso(),
+    };
+    this.pushRunLog({
+      stage: "assistant-loop",
+      status: "pass",
+      summary: `assistant-loop.started:${trigger}`,
+      payload: { trigger },
+    });
+
+    try {
+      this.processPendingAutomationTasks();
+
+      let snapshot = this.getMainLoopSnapshot();
+      if (snapshot.primaryAction.key === "add-material" || snapshot.primaryAction.key === "confirm-goal") {
+        this.persistAssistantLoop(snapshot);
+        this.pushRunLog({
+          stage: "assistant-loop",
+          status: "warn",
+          summary: `assistant-loop.blocked:${snapshot.primaryAction.key}`,
+          payload: snapshot as unknown as Record<string, unknown>,
+        });
+        return snapshot;
+      }
+
+      if (snapshot.status === "complete") {
+        this.persistAssistantLoop(snapshot);
+        this.pushRunLog({
+          stage: "assistant-loop",
+          status: "pass",
+          summary: "assistant-loop.complete",
+          payload: snapshot as unknown as Record<string, unknown>,
+        });
+        return snapshot;
+      }
+
+      if (this.shouldRunDeepOrganize()) {
+        await this.runDeepOrganize(trigger);
+      }
+
+      const dryRun = this.runDryRun();
+      if (dryRun.gateResult === "fail") {
+        snapshot = this.getMainLoopSnapshot();
+        this.persistAssistantLoop(snapshot);
+        this.pushRunLog({
+          stage: "assistant-loop",
+          status: "warn",
+          summary: "assistant-loop.blocked:dry-run",
+          payload: snapshot as unknown as Record<string, unknown>,
+        });
+        return snapshot;
+      }
+
+      await this.generateArtifact();
+      await this.verifyLatest();
+      snapshot = this.getMainLoopSnapshot();
+      this.persistAssistantLoop(snapshot);
+      this.pushRunLog({
+        stage: "assistant-loop",
+        status: snapshot.status === "complete" ? "pass" : "warn",
+        summary: `assistant-loop.${snapshot.status}`,
+        payload: snapshot as unknown as Record<string, unknown>,
+      });
+      return snapshot;
+    } catch (error) {
+      const message = String((error as Error).message || error);
+      const snapshot = this.buildFailureLoopSnapshot(message);
+      this.persistAssistantLoop(snapshot, message);
+      this.pushRunLog({
+        stage: "assistant-loop",
+        status: "fail",
+        summary: "assistant-loop.failed",
+        payload: { trigger, error: message },
+      });
+      return snapshot;
+    }
   }
 
   runAutoFlow(trigger: string): DryRunReport {
@@ -1020,11 +1585,14 @@ export class PhonoWellEngine {
       summary: `auto-flow.completed:${trigger}`,
       payload: { trigger, gateResult: report.gateResult },
     });
+    this.refreshAssistantLoop();
     return report;
   }
 
   applyMicroLifecycle(): MicroLifecycleSummary {
-    return applyActionResult(this.state, applyMicroLifecycleAction(this.state));
+    const summary = applyActionResult(this.state, applyMicroLifecycleAction(this.state));
+    this.refreshAssistantLoop();
+    return summary;
   }
 
   runDryRun(): DryRunReport {
@@ -1065,6 +1633,7 @@ export class PhonoWellEngine {
       summary: `dry-run ${gateResult}`,
       payload: report as unknown as Record<string, unknown>,
     });
+    this.refreshAssistantLoop();
 
     return structuredClone(report);
   }
@@ -1106,6 +1675,7 @@ export class PhonoWellEngine {
         removedDropIds: diff?.removedDropIds ?? [],
       },
     });
+    this.refreshAssistantLoop();
 
     return structuredClone(candidate);
   }
@@ -1175,6 +1745,7 @@ export class PhonoWellEngine {
     this.state.selfIterationRecords.unshift(selfIterationRecord);
     this.state.selfIterationRecords = this.state.selfIterationRecords.slice(0, 20);
     this.state.pendingChangedDropIds = [];
+    this.refreshAssistantLoop();
 
     return structuredClone(verifyReport);
   }

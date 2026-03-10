@@ -32,6 +32,9 @@ Required fields:
 - `artifact-type`: target output type (`app | ppt | video | game | ...`)
 - `origin-drop-id`: one required `drop-goal-origin-*`
 - `acceptance-drop-id`: one required `drop-canon-acceptance-contract`
+- `acceptance-status`: `pending | accepted`
+- `accepted-candidate-id`: latest explicitly accepted candidate when present
+- `accepted-at`: timestamp for the latest explicit acceptance decision
 - `wish`: concise artifact specification
 - `definition-of-done`: completion criteria
 - `constraints`: time/tech/style/license boundaries
@@ -102,3 +105,15 @@ Optional fields:
 - micro assets must follow candidate -> promoted -> archived lifecycle managed by AI by default.
 - generation requires explicit dry-run and reverse validation record.
 - generation defaults to minimal output and reuse-first asset selection.
+
+## Public Product Surface
+
+- default user action set:
+- add material
+- confirm or revise goal
+- continue loop or review requested checkpoint
+- accept final artifact direction
+- manual relation editing remains available because incorrect structure can be expensive to recover from silently
+- manual summary editing remains available because user-authored correction is sometimes cheaper than iterative prompting
+- raw packet/proposal/verify evidence remains diagnostics-only by default because trust requires inspectability without forcing every user through internals
+- stage-specific actions are not the primary UX contract; they are fallback and diagnostics controls

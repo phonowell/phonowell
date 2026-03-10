@@ -19,7 +19,8 @@
     "runLogs",
     "unresolvedQuestions",
     "assetConversations",
-    "automationTasks"
+    "automationTasks",
+    "assistantLoop"
   ],
   "properties": {
     "project": {
@@ -43,6 +44,7 @@
         "definitionOfDone",
         "constraints",
         "acceptanceDropId",
+        "acceptanceStatus",
         "status",
         "dryRunStatus",
         "createdAt",
@@ -56,6 +58,9 @@
         "constraints": { "type": "array", "items": { "type": "string" } },
         "originDropId": { "type": "string" },
         "acceptanceDropId": { "type": "string" },
+        "acceptanceStatus": { "type": "string", "enum": ["pending", "accepted"] },
+        "acceptedCandidateId": { "type": "string" },
+        "acceptedAt": { "type": "string" },
         "status": { "type": "string" },
         "dryRunStatus": { "type": "string", "enum": ["pass", "warn", "fail"] },
         "createdAt": { "type": "string" },
@@ -75,6 +80,31 @@
     "runLogs": { "type": "array", "items": { "type": "object" } },
     "unresolvedQuestions": { "type": "array", "items": { "type": "string" } },
     "assetConversations": { "type": "array", "items": { "type": "object" } },
-    "automationTasks": { "type": "array", "items": { "type": "object" } }
+    "automationTasks": { "type": "array", "items": { "type": "object" } },
+    "assistantLoop": {
+      "type": "object",
+      "required": ["status", "userState", "statusLabel", "summary", "nextAction", "updatedAt"],
+      "properties": {
+        "status": { "type": "string", "enum": ["idle", "running", "blocked", "complete", "failed"] },
+        "userState": { "type": "string", "enum": ["ready", "needs-input", "risk-found", "evidence-attached"] },
+        "statusLabel": { "type": "string" },
+        "summary": { "type": "string" },
+        "blockedReason": { "type": "string" },
+        "nextAction": {
+          "type": "object",
+          "required": ["key", "label", "detail"],
+          "properties": {
+            "key": { "type": "string" },
+            "label": { "type": "string" },
+            "detail": { "type": "string" }
+          }
+        },
+        "updatedAt": { "type": "string" },
+        "lastRunAt": { "type": "string" },
+        "latestCandidateId": { "type": "string" },
+        "latestVerifyPass": { "type": "boolean" },
+        "lastError": { "type": "string" }
+      }
+    }
   }
 }

@@ -124,6 +124,94 @@ test("runtime bootstrap drains persisted pending automation tasks", { concurrenc
   });
 });
 
+test("assistant loop checkpoint resumes from persisted state", { concurrency: false }, async () => {
+  await withWorkspaceRoot("phonowell-loop-resume-", async () => {
+    const { engine } = await import("../orchestrator/index.js");
+    const { PhonoWellEngine } = await import("../orchestrator/engine.js");
+    const { loadPersistedState, persistCurrentState } = await import("../orchestrator/store.js");
+
+    engine.replaceState(new PhonoWellEngine().getState());
+    engine.bootstrapInitialState();
+    engine.ingestDrop({
+      type: "note",
+      source: "user",
+      title: "Resume loop checkpoint",
+      summary: "Need a persisted checkpoint after the user adds material.",
+      preserveOrphan: false,
+    });
+    persistCurrentState();
+    const before = engine.getMainLoopSnapshot();
+
+    engine.replaceState(new PhonoWellEngine().getState());
+    const persisted = loadPersistedState();
+    assert.ok(persisted);
+
+    const resumedEngine = new PhonoWellEngine();
+    resumedEngine.replaceState(persisted!);
+    const after = resumedEngine.getMainLoopSnapshot();
+
+    assert.equal(before.status, "blocked");
+    assert.equal(after.status, before.status);
+    assert.equal(after.primaryAction.key, before.primaryAction.key);
+    assert.equal(after.summary, before.summary);
+  });
+});
+
+test("accepted direction survives restart until new changes appear", { concurrency: false }, async () => {
+  await withWorkspaceRoot("phonowell-accepted-loop-", async () => {
+    const { engine } = await import("../orchestrator/index.js");
+    const { PhonoWellEngine } = await import("../orchestrator/engine.js");
+    const { loadPersistedState, persistCurrentState } = await import("../orchestrator/store.js");
+
+    engine.replaceState(new PhonoWellEngine().getState());
+    engine.bootstrapInitialState();
+    engine.updateGoalOrigin({ status: "confirmed" });
+    engine.ingestDrop({
+      type: "note",
+      source: "user",
+      title: "Accepted material",
+      summary: "Enough material exists for an explicit acceptance decision.",
+      preserveOrphan: false,
+    });
+    const state = engine.getState();
+    state.pendingChangedDropIds = [];
+    state.candidates.unshift({
+      candidateId: "candidate-persisted-accept",
+      wellId: state.well.id,
+      content: "accepted candidate",
+      coverageDropIds: state.drops.map((drop) => drop.dropId),
+      createdAt: new Date().toISOString(),
+    });
+    state.verifyReports.unshift({
+      pass: true,
+      issues: [],
+      suggestions: [],
+      acceptanceCoverageDropIds: [state.well.acceptanceDropId],
+      acceptanceItems: [],
+      changedDropCoverage: [],
+      uncoveredAcceptanceItemIds: [],
+      selfIterationEvidence: ["run-1:verify:pass"],
+      changedDropIds: [],
+      rerunConsistent: true,
+      createdAt: new Date().toISOString(),
+    });
+    engine.replaceState(state);
+    engine.acceptCurrentDirection("test.persisted-accept");
+    persistCurrentState();
+
+    const persisted = loadPersistedState();
+    assert.ok(persisted);
+
+    const resumedEngine = new PhonoWellEngine();
+    resumedEngine.replaceState(persisted!);
+    const loop = resumedEngine.getMainLoopSnapshot();
+
+    assert.equal(loop.acceptanceStatus, "accepted");
+    assert.equal(loop.statusLabel, "Accepted");
+    assert.equal(loop.acceptedCandidateId, "candidate-persisted-accept");
+  });
+});
+
 test("project routes can create, switch, and delete isolated projects", { concurrency: false }, async () => {
   await withWorkspaceRoot("phonowell-project-routes-", async () => {
     const { handleProjectRoutes } = await import("../server/api/routes/projects.js");

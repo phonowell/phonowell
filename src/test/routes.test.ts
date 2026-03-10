@@ -100,6 +100,93 @@ test("cycle route is gated behind debug mode", async () => {
   assert.match(response.body, /debug api disabled/);
 });
 
+test("assistant loop route is public and returns one primary action", async () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  let persistCalls = 0;
+
+  const response = await handleRuntimeRoutes({
+    ...makeCtx({
+      engine,
+      method: "POST",
+      path: "/api/assistant-loop",
+      body: { trigger: "test.public-loop" },
+    }),
+    persistCurrentState: () => {
+      persistCalls += 1;
+    },
+  });
+
+  assert.ok(response);
+  assert.equal(response.status, 200);
+  assert.equal(persistCalls, 1);
+  const payload = JSON.parse(response.body);
+  assert.equal(payload.loop.status, "blocked");
+  assert.equal(payload.loop.primaryAction.key, "add-material");
+  assert.equal(typeof payload.loop.primaryAction.label, "string");
+  assert.equal(typeof payload.loop.primaryAction.detail, "string");
+});
+
+test("accept-direction route persists an explicit acceptance decision", async () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
+  engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "Accepted material",
+    summary: "Enough material exists for an explicit acceptance decision.",
+    preserveOrphan: false,
+  });
+  const state = engine.getState();
+  state.well.acceptanceStatus = "pending";
+  state.pendingChangedDropIds = [];
+  state.candidates.unshift({
+    candidateId: "candidate-ready",
+    wellId: state.well.id,
+    content: "ready candidate",
+    coverageDropIds: state.drops.map((drop) => drop.dropId),
+    createdAt: new Date().toISOString(),
+  });
+  state.verifyReports.unshift({
+    pass: true,
+    issues: [],
+    suggestions: [],
+    acceptanceCoverageDropIds: [state.well.acceptanceDropId],
+    acceptanceItems: [],
+    changedDropCoverage: [],
+    uncoveredAcceptanceItemIds: [],
+    selfIterationEvidence: ["run-1:verify:pass"],
+    changedDropIds: [],
+    rerunConsistent: true,
+    createdAt: new Date().toISOString(),
+  });
+  engine.replaceState(state);
+
+  let persistCalls = 0;
+  const response = await handleRuntimeRoutes({
+    ...makeCtx({
+      engine,
+      method: "POST",
+      path: "/api/assistant-loop/accept",
+      body: { note: "test.accept-direction" },
+    }),
+    persistCurrentState: () => {
+      persistCalls += 1;
+    },
+  });
+
+  assert.ok(response);
+  assert.equal(response.status, 200);
+  assert.equal(persistCalls, 1);
+  const payload = JSON.parse(response.body);
+  assert.equal(payload.loop.acceptanceStatus, "accepted");
+  assert.equal(payload.loop.status, "complete");
+  assert.equal(payload.loop.statusLabel, "Accepted");
+  assert.equal(engine.getState().well.acceptanceStatus, "accepted");
+  assert.equal(engine.getState().well.acceptedCandidateId, "candidate-ready");
+});
+
 test("wish and goal routes persist state without mutating graph side effects", async () => {
   const prevCwd = process.cwd();
   const workdir = mkdtempSync(join(tmpdir(), "phonowell-route-"));
@@ -180,6 +267,26 @@ test("core-gate route is read-only", async () => {
   assert.equal(persistCalls, 0);
   assert.deepEqual(after, before);
   assert.equal(typeof payload.gateResult, "string");
+});
+
+test("loop read route is read-only and exposes user-facing checkpoint data", async () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  const before = engine.getState();
+
+  const response = await handleReadRoutes(makeCtx({
+    engine,
+    method: "GET",
+    path: "/api/loop",
+  }));
+
+  assert.ok(response);
+  const after = engine.getState();
+  const payload = JSON.parse(response.body);
+  assert.deepEqual(after, before);
+  assert.equal(typeof payload.loop.statusLabel, "string");
+  assert.equal(typeof payload.loop.primaryAction.label, "string");
+  assert.equal(Array.isArray(payload.loop.reviewCheckpoints), true);
 });
 
 test("drop update rejects invalid position payload", async () => {

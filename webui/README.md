@@ -4,19 +4,14 @@
 
 ## Implemented UX
 
-- top bar with stage status + Generate button
-- goal-origin drafting and confirmation panel
-- asset drop form (`note/doc/url/image/generated`)
-- relation connect form (`from -> to`)
-- canvas nodes + relation lines visualization
-- summary edit in the asset detail panel
-- dry-run, generate, and verify buttons
-- latest automation applied/deferred decisions in the asset detail panel
-- latest verify route, priority audit, and acceptance coverage details in the asset detail panel
-- runtime packet panel for explicit execution evidence
-- project create/switch/delete controls
-- asset layer filter and layer badges on graph nodes
-- glanceable observability stats for schema/assets/relations/packets
+- default surface is being compressed toward one working screen:
+- add material
+- confirm or revise goal
+- continue the assistant loop or review the requested checkpoint
+- inspect the current artifact/result and accept direction when ready
+- explicit acceptance is now recorded separately from "ready for judgment"
+- diagnostics retain manual controls for relation correction, summary edits, and explicit stage execution
+- canvas, audit details, and raw runtime evidence remain available behind progressive disclosure
 
 ## Notes
 

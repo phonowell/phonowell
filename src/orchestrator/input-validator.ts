@@ -185,6 +185,24 @@ export function validateAutoFlowInput(input: unknown): { trigger?: string } {
   return body as { trigger?: string };
 }
 
+export function validateAssistantLoopInput(input: unknown): { trigger?: string } {
+  if (!isObject(input)) {
+    throw new Error("assistant-loop payload must be an object");
+  }
+  const body: Record<string, unknown> = input;
+  if (body.trigger !== undefined) ensure(typeof body.trigger === "string", "assistant-loop payload has invalid trigger");
+  return body as { trigger?: string };
+}
+
+export function validateAcceptDirectionInput(input: unknown): { note?: string } {
+  if (!isObject(input)) {
+    throw new Error("accept-direction payload must be an object");
+  }
+  const body: Record<string, unknown> = input;
+  if (body.note !== undefined) ensure(typeof body.note === "string", "accept-direction payload has invalid note");
+  return body as { note?: string };
+}
+
 export function validatePacketStage(stage: string): "analyze" | "gap-fill" | "generate" | "verify" {
   switch (stage) {
     case "analyze":

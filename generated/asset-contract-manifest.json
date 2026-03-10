@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "compiledAt": "2026-03-10T01:30:34.599Z",
+  "compiledAt": "2026-03-10T04:33:02.718Z",
   "assetCount": 19,
   "assets": [
     {
@@ -637,14 +637,16 @@
       "purpose": "Single source of truth for V1 scope, UX, event semantics, runtime contract, and milestone.",
       "contractLines": [
         "- artifact: `phonowell WebUI V1`",
-        "- mode: minimal canvas interaction",
-        "- user actions: `drop` + `connect`"
+        "- mode: low-UI assistant workspace with progressive disclosure",
+        "- default user actions:",
+        "- add material",
+        "- confirm or revise goal",
+        "- continue loop or review requested checkpoint",
+        "- accept final artifact direction"
       ],
       "guardrailLines": [],
       "keywords": [
-        "phonowell WebUI V1",
-        "drop",
-        "connect"
+        "phonowell WebUI V1"
       ],
       "evidenceRequirements": [
         "webui-surface"

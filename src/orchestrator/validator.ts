@@ -23,6 +23,8 @@ export {
 } from "./state-schema-service.js";
 export {
   validateAutoFlowInput,
+  validateAssistantLoopInput,
+  validateAcceptDirectionInput,
   validateCreateDropInput,
   validateGoalInput,
   validatePacketStage,
@@ -263,8 +265,26 @@ export function normalizeAndValidateState(state: WellState): WellState {
   if (!Array.isArray(mutableState.automationTasks)) {
     mutableState.automationTasks = [];
   }
+  if (!isObject(mutableState.assistantLoop)) {
+    mutableState.assistantLoop = {
+      status: "idle",
+      userState: "needs-input",
+      statusLabel: "Idle",
+      summary: "Add material to begin the assistant loop.",
+      nextAction: {
+        key: "add-material",
+        label: "Add material",
+        detail: "Drop source material so the assistant has something concrete to work with.",
+      },
+      updatedAt: new Date().toISOString(),
+    };
+  }
   ensure(Boolean(state.project?.projectId), "state missing project.projectId");
   ensure(Boolean(state.well?.id), "state missing well.id");
+  if ((state.well as unknown as Record<string, unknown>).acceptanceStatus !== "pending"
+    && (state.well as unknown as Record<string, unknown>).acceptanceStatus !== "accepted") {
+    (state.well as unknown as Record<string, unknown>).acceptanceStatus = "pending";
+  }
   ensure(Array.isArray(state.drops), "state missing drops");
   ensure(Array.isArray(state.relations), "state missing relations");
   ensure(Array.isArray(state.candidates), "state missing candidates");
@@ -278,6 +298,7 @@ export function normalizeAndValidateState(state: WellState): WellState {
   ensure(Array.isArray(state.unresolvedQuestions), "state missing unresolvedQuestions");
   ensure(Array.isArray(state.assetConversations), "state missing assetConversations");
   ensure(Array.isArray(state.automationTasks), "state missing automationTasks");
+  ensure(isObject(state.assistantLoop), "state missing assistantLoop");
 
   for (const drop of state.drops) {
     const mutable = drop as unknown as Record<string, unknown>;

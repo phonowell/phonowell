@@ -1,5 +1,7 @@
 import {
   validateAutoFlowInput,
+  validateAssistantLoopInput,
+  validateAcceptDirectionInput,
   validateGoalInput,
   validatePacketStage,
   validateWishInput,
@@ -62,6 +64,32 @@ export async function handleRuntimeRoutes(ctx: ApiContext) {
       return json(result);
     } catch (error) {
       return json({ error: String((error as Error).message) }, 400);
+    }
+  }
+  if (method === "POST" && url.pathname === "/api/assistant-loop") {
+    let body: ReturnType<typeof validateAssistantLoopInput>;
+    try {
+      body = validateAssistantLoopInput(await parseBody(ctx.req));
+    } catch (error) {
+      return badRequest(error);
+    }
+    const loop = await engine.runAssistantLoop({ trigger: body.trigger ?? "api.assistant-loop" });
+    persistCurrentState();
+    return json({ loop }, loop.status === "failed" ? 409 : 200);
+  }
+  if (method === "POST" && url.pathname === "/api/assistant-loop/accept") {
+    let body: ReturnType<typeof validateAcceptDirectionInput>;
+    try {
+      body = validateAcceptDirectionInput(await parseBody(ctx.req));
+    } catch (error) {
+      return badRequest(error);
+    }
+    try {
+      const loop = engine.acceptCurrentDirection(body.note);
+      persistCurrentState();
+      return json({ loop });
+    } catch (error) {
+      return json({ error: String((error as Error).message) }, 409);
     }
   }
   if (method === "POST" && url.pathname === "/api/auto-flow") {

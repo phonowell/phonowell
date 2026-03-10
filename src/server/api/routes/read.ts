@@ -145,6 +145,21 @@ export async function handleReadRoutes(ctx: ApiContext) {
     fresh.well.status = "goal-origin-init";
     fresh.well.dryRunStatus = "warn";
     fresh.well.dryRunReport = undefined;
+    fresh.well.acceptanceStatus = "pending";
+    fresh.well.acceptedCandidateId = undefined;
+    fresh.well.acceptedAt = undefined;
+    fresh.assistantLoop = {
+      status: "idle",
+      userState: "needs-input",
+      statusLabel: "Idle",
+      summary: "Add material to start the assistant loop.",
+      nextAction: {
+        key: "add-material",
+        label: "Add material",
+        detail: "Drop source material so the assistant has concrete input to organize.",
+      },
+      updatedAt: new Date().toISOString(),
+    };
     engine.replaceState(fresh);
     persistCurrentState();
     return json({ reset: true });

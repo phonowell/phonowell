@@ -21455,119 +21455,129 @@ var e = import_react.default.createElement;
 var COPY = {
   zh: {
     booting: "\u542F\u52A8 phonowell...",
-    subtitle: "\u628A\u96F6\u6563\u8F93\u5165\u7A33\u5B9A\u6536\u655B\u6210\u53EF\u4EA4\u4ED8\u7ED3\u679C",
+    subtitle: "\u628A\u96F6\u6563\u6750\u6599\u6536\u655B\u6210\u4E00\u4E2A\u53EF\u5224\u65AD\u7684\u7ED3\u679C",
     language: "\u8BED\u8A00",
     languageZh: "\u4E2D\u6587",
     languageEn: "English",
-    organize: "\u6574\u7406\u8D44\u4EA7",
-    preflight: "\u9884\u68C0",
-    generate: "\u751F\u6210\u4EA7\u7269",
-    verify: "\u9A8C\u8BC1",
-    generateBlocked: "\u751F\u6210\u4EA7\u7269\uFF08\u9884\u68C0\u672A\u901A\u8FC7\uFF09",
-    addAsset: "\u6DFB\u52A0\u65B0\u8D44\u4EA7",
-    addAssetTitle: "\u6DFB\u52A0\u65B0\u8D44\u4EA7",
-    addAssetHint: "\u8F93\u5165\u6587\u672C\u6216\u62D6\u5165\u6587\u4EF6\u3002\u6DFB\u52A0\u540E\u5148\u4F5C\u4E3A\u5B64\u513F\u8D44\u4EA7\u8FDB\u5165\u753B\u5E03\u3002",
-    assetText: "\u6587\u672C\u8F93\u5165",
-    assetTextPlaceholder: "\u7C98\u8D34\u9700\u6C42\u3001\u94FE\u63A5\u8BF4\u660E\u3001\u60F3\u6CD5\u3001\u6458\u8981\u3002\u53EF\u7528\u7A7A\u884C\u5206\u9694\u4E3A\u591A\u4E2A\u8D44\u4EA7\u3002",
-    dropFiles: "\u62D6\u5165\u6587\u4EF6\u5230\u6B64\u5904\uFF0C\u6216\u4F7F\u7528\u6587\u4EF6\u9009\u62E9",
-    confirmAdd: "\u786E\u8BA4\u6DFB\u52A0",
-    cancel: "\u53D6\u6D88",
-    canvas: "\u8D44\u4EA7\u753B\u5E03",
-    globalScope: "\u5168\u5C40\u8303\u56F4",
-    assetScope: "\u5F53\u524D\u8D44\u4EA7\u8303\u56F4",
-    llmPlaceholderGlobal: "\u5411 Phonowell \u8F93\u5165\u5168\u5C40\u6307\u4EE4\u3001\u95EE\u9898\u6216\u8865\u5145\u4E0A\u4E0B\u6587",
-    llmPlaceholderAsset: "\u5411\u5F53\u524D\u8D44\u4EA7\u8F93\u5165\u8865\u5145\u8BF4\u660E\u3001\u95EE\u9898\u6216\u4FEE\u6539\u8981\u6C42",
-    summary: "\u4FE1\u606F\u6458\u8981",
-    conversation: "\u5BF9\u8BDD\u6D41",
-    noSelection: "\u672A\u9009\u4E2D\u8D44\u4EA7",
-    noConversation: "\u6682\u65E0\u4F1A\u8BDD\u6D41\uFF0C\u5F53\u524D\u663E\u793A\u8FD0\u884C\u65E5\u5FD7\u6458\u8981\u3002",
-    orphan: "\u5B64\u513F\u8D44\u4EA7",
-    dragHint: "\u62D6\u62FD\u8C03\u6574\u4F4D\u7F6E",
-    selectPrompt: "\u70B9\u51FB\u753B\u5E03\u4E2D\u7684\u8D44\u4EA7\u67E5\u770B\u6458\u8981\u4E0E\u4F1A\u8BDD\u6D41",
+    currentGoal: "\u5F53\u524D\u76EE\u6807",
+    currentArtifact: "\u5F53\u524D\u7ED3\u679C",
+    nextCheckpoint: "\u4E0B\u4E00\u68C0\u67E5\u70B9",
+    noGoal: "\u5148\u8865\u5145\u6750\u6599\u5E76\u786E\u8BA4\u76EE\u6807\u3002",
+    noArtifact: "\u52A9\u624B\u8FD8\u6CA1\u6709\u4EA7\u51FA\u53EF\u5224\u65AD\u7684\u7ED3\u679C\u3002",
+    noCheckpoint: "\u5F53\u524D\u6CA1\u6709\u5F85\u5BA1\u67E5\u7684\u68C0\u67E5\u70B9\u3002",
+    trust: "\u53EF\u4FE1\u5EA6",
+    materialTitle: "\u6750\u6599\u8F93\u5165",
+    materialHint: "\u7C98\u8D34\u6587\u672C\u3001\u8865\u5145\u94FE\u63A5\u8BF4\u660E\uFF0C\u6216\u62D6\u5165\u6587\u4EF6\u3002\u6750\u6599\u4F1A\u7ACB\u5373\u8FDB\u5165\u9879\u76EE\u3002",
+    materialPlaceholder: "\u8F93\u5165\u9700\u6C42\u3001\u4E0A\u4E0B\u6587\u3001\u53C2\u8003\u94FE\u63A5\u3001\u7ED3\u6784\u8349\u7A3F\u6216\u7EA6\u675F\u3002",
     queuedFiles: "\u5F85\u6DFB\u52A0\u6587\u4EF6",
     noFiles: "\u6682\u65E0\u6587\u4EF6",
-    send: "\u53D1\u9001",
-    close: "\u5173\u95ED",
-    status: "\u72B6\u6001",
-    latestProposal: "\u6700\u65B0\u63D0\u6848",
-    latestVerify: "\u6700\u65B0\u9A8C\u8BC1",
-    assetDetails: "\u8D44\u4EA7\u8BE6\u60C5",
-    selectedAsset: "\u5DF2\u9009\u8D44\u4EA7",
-    selectAssetTip: "\u9009\u4E2D\u8D44\u4EA7\u540E\u53EF\u67E5\u770B\u6458\u8981\u4E0E\u4F1A\u8BDD",
-    activeAsset: "\u5F53\u524D\u8D44\u4EA7",
-    goalPanel: "\u76EE\u6807\u6E90",
-    goalDraft: "\u8D77\u8349\u76EE\u6807",
-    goalConfirm: "\u786E\u8BA4\u76EE\u6807",
-    goalRevise: "\u6807\u8BB0\u4FEE\u8BA2",
-    goalSummaryPlaceholder: "\u7F16\u8F91\u76EE\u6807\u6458\u8981\uFF0C\u786E\u8BA4\u540E\u624D\u5141\u8BB8\u7A33\u5B9A\u751F\u6210",
+    addMaterial: "\u6DFB\u52A0\u6750\u6599",
+    goalTitle: "\u76EE\u6807\u786E\u8BA4",
+    goalHint: "\u53EA\u4FDD\u7559\u4E00\u6761\u5F53\u524D\u6700\u60F3\u4EA4\u4ED8\u7684\u65B9\u5411\u3002\u786E\u8BA4\u540E\uFF0C\u52A9\u624B\u624D\u4F1A\u9ED8\u8BA4\u63A8\u8FDB\u751F\u6210\u3002",
+    goalPlaceholder: "\u7528\u4E00\u53E5\u8BDD\u63CF\u8FF0\u8981\u4EA4\u4ED8\u4EC0\u4E48\uFF0C\u4EE5\u53CA\u600E\u6837\u7B97\u5B8C\u6210\u3002",
+    confirmGoal: "\u786E\u8BA4\u76EE\u6807",
+    reviseGoal: "\u6807\u8BB0\u4FEE\u8BA2",
+    draftGoal: "\u91CD\u65B0\u8D77\u8349",
+    artifactTitle: "\u5F53\u524D\u7ED3\u679C",
+    artifactHint: "\u8FD9\u91CC\u59CB\u7EC8\u663E\u793A\u6700\u65B0\u5019\u9009\u7ED3\u679C\u548C\u53EF\u4FE1\u8BF4\u660E\u3002",
+    artifactCoverage: "\u8986\u76D6\u6750\u6599\u6570",
+    acceptedAt: "\u63A5\u53D7\u65F6\u95F4",
+    resultSummary: "\u7ED3\u679C\u8BF4\u660E",
+    checkpointTitle: "\u5F85\u5904\u7406\u68C0\u67E5\u70B9",
+    checkpointHint: "\u53EA\u5C55\u793A\u4F1A\u963B\u585E\u9ED8\u8BA4\u4E3B\u5FAA\u73AF\u7684\u9AD8\u5F71\u54CD\u68C0\u67E5\u70B9\u3002",
+    noReview: "\u5F53\u524D\u6CA1\u6709\u989D\u5916\u5BA1\u67E5\u9879\u3002",
+    diagnostics: "\u8BCA\u65AD\u4E0E\u624B\u5DE5\u63A7\u5236",
+    diagnosticsHint: "\u8FD9\u91CC\u4FDD\u7559\u624B\u5DE5\u7F16\u8F91\u3001\u8FDE\u63A5\u3001\u9636\u6BB5\u8FD0\u884C\u548C\u539F\u59CB\u8BC1\u636E\uFF0C\u4E0D\u963B\u585E\u9ED8\u8BA4\u8DEF\u5F84\u3002",
+    manualControls: "\u624B\u5DE5\u63A7\u5236",
+    organize: "\u6574\u7406",
+    preflight: "\u9884\u68C0",
+    generate: "\u751F\u6210",
+    verify: "\u9A8C\u8BC1",
+    materials: "\u6750\u6599\u5217\u8868",
+    noSelection: "\u672A\u9009\u4E2D\u6750\u6599",
+    selectMaterial: "\u9009\u62E9\u4E00\u4E2A\u6750\u6599\u67E5\u770B\u8BE6\u60C5\u3001\u5173\u7CFB\u548C\u5BF9\u8BDD\u3002",
+    saveSummary: "\u4FDD\u5B58\u6458\u8981",
     connectRelation: "\u8FDE\u63A5\u5173\u7CFB",
     relationType: "\u5173\u7CFB\u7C7B\u578B",
-    saveSummary: "\u4FDD\u5B58\u6458\u8981",
-    automation: "\u81EA\u52A8\u6574\u7406",
-    acceptance: "\u9A8C\u6536\u8986\u76D6",
-    verifyRoute: "\u9A8C\u8BC1\u8DEF\u7531",
-    priorityAudit: "\u4F18\u5148\u7EA7\u5BA1\u8BA1",
-    applied: "\u5DF2\u843D\u5730",
-    deferred: "\u5DF2\u5EF6\u540E",
-    evidence: "\u8BC1\u636E"
+    automation: "\u81EA\u52A8\u51B3\u7B56\u8BB0\u5F55",
+    evidence: "\u8BC1\u636E",
+    acceptance: "\u9A8C\u6536\u6620\u5C04",
+    conversation: "\u5BF9\u8BDD",
+    conversationPlaceholderGlobal: "\u8865\u5145\u76EE\u6807\u3001\u63D0\u95EE\uFF0C\u6216\u8BA9\u52A9\u624B\u89E3\u91CA\u4E0B\u4E00\u6B65\u3002",
+    conversationPlaceholderAsset: "\u9488\u5BF9\u5F53\u524D\u6750\u6599\u8865\u5145\u8BF4\u660E\u6216\u63D0\u51FA\u4FEE\u6539\u8981\u6C42\u3002",
+    send: "\u53D1\u9001",
+    activeMaterial: "\u5F53\u524D\u6750\u6599",
+    rawRuntime: "\u8FD0\u884C\u8BCA\u65AD",
+    status: "\u72B6\u6001",
+    primaryAction: "\u4E3B\u52A8\u4F5C",
+    noConversations: "\u6682\u65E0\u5BF9\u8BDD\u8BB0\u5F55\u3002",
+    noAutomation: "\u6682\u65E0\u81EA\u52A8\u51B3\u7B56\u8BB0\u5F55\u3002",
+    noAcceptance: "\u6682\u65E0\u9A8C\u6536\u6620\u5C04\u7ED3\u679C\u3002",
+    packetSummary: "\u6700\u65B0\u8FD0\u884C\u6458\u8981",
+    proposalSummary: "\u6700\u65B0\u63D0\u6848\u6458\u8981"
   },
   en: {
     booting: "booting phonowell...",
-    subtitle: "Turn scattered input into a deliverable result",
+    subtitle: "Turn scattered material into one reviewable result",
     language: "Language",
     languageZh: "\u4E2D\u6587",
     languageEn: "English",
-    organize: "Organize Assets",
-    preflight: "Preflight",
-    generate: "Generate Artifact",
-    verify: "Verify",
-    generateBlocked: "Generate (Preflight Required)",
-    addAsset: "Add Asset",
-    addAssetTitle: "Add Asset",
-    addAssetHint: "Paste text or drop files. New assets enter the canvas as orphans first.",
-    assetText: "Text Input",
-    assetTextPlaceholder: "Paste requirements, notes, links, or ideas. Separate multiple assets with blank lines.",
-    dropFiles: "Drop files here, or choose files",
-    confirmAdd: "Add",
-    cancel: "Cancel",
-    canvas: "Asset Canvas",
-    globalScope: "Global Scope",
-    assetScope: "Asset Scope",
-    llmPlaceholderGlobal: "Ask globally, add context, or direct the system",
-    llmPlaceholderAsset: "Ask about this asset, add context, or request edits",
-    summary: "Summary",
-    conversation: "Conversation",
-    noSelection: "No asset selected",
-    noConversation: "No conversation yet. Showing recent runtime logs instead.",
-    orphan: "orphan asset",
-    dragHint: "drag to reposition",
-    selectPrompt: "Click an asset to open summary and conversation",
-    queuedFiles: "Queued Files",
+    currentGoal: "Current goal",
+    currentArtifact: "Current result",
+    nextCheckpoint: "Next checkpoint",
+    noGoal: "Add material and confirm the goal first.",
+    noArtifact: "No reviewable result yet.",
+    noCheckpoint: "No blocking checkpoint right now.",
+    trust: "Trust",
+    materialTitle: "Material intake",
+    materialHint: "Paste text, add links, or drop files. Material enters the project immediately.",
+    materialPlaceholder: "Paste requirements, context, reference links, structure ideas, or constraints.",
+    queuedFiles: "Queued files",
     noFiles: "No files",
+    addMaterial: "Add material",
+    goalTitle: "Goal confirmation",
+    goalHint: "Keep one current delivery direction. The assistant only generates by default after confirmation.",
+    goalPlaceholder: "Describe the deliverable and what success looks like.",
+    confirmGoal: "Confirm goal",
+    reviseGoal: "Mark revised",
+    draftGoal: "Draft again",
+    artifactTitle: "Current result",
+    artifactHint: "This always shows the latest candidate and trust summary.",
+    artifactCoverage: "Covered material",
+    acceptedAt: "Accepted at",
+    resultSummary: "Result summary",
+    checkpointTitle: "Blocking checkpoints",
+    checkpointHint: "Only high-impact checkpoints that block the default loop appear here.",
+    noReview: "No extra review item right now.",
+    diagnostics: "Diagnostics and manual controls",
+    diagnosticsHint: "Manual edits, links, stage runs, and raw evidence stay here without blocking the default path.",
+    manualControls: "Manual controls",
+    organize: "Organize",
+    preflight: "Preflight",
+    generate: "Generate",
+    verify: "Verify",
+    materials: "Materials",
+    noSelection: "No material selected",
+    selectMaterial: "Select a material to inspect details, relations, and conversation.",
+    saveSummary: "Save summary",
+    connectRelation: "Connect relation",
+    relationType: "Relation type",
+    automation: "Automation log",
+    evidence: "Evidence",
+    acceptance: "Acceptance mapping",
+    conversation: "Conversation",
+    conversationPlaceholderGlobal: "Add context, ask a question, or ask the assistant to explain the next step.",
+    conversationPlaceholderAsset: "Add instructions or request changes for the selected material.",
     send: "Send",
-    close: "Close",
+    activeMaterial: "Active material",
+    rawRuntime: "Runtime diagnostics",
     status: "Status",
-    latestProposal: "Latest Proposal",
-    latestVerify: "Latest Verify",
-    assetDetails: "Asset Details",
-    selectedAsset: "Selected Asset",
-    selectAssetTip: "Select an asset to inspect summary and conversation",
-    activeAsset: "Active Asset",
-    goalPanel: "Goal Origin",
-    goalDraft: "Draft Goal",
-    goalConfirm: "Confirm Goal",
-    goalRevise: "Mark Revised",
-    goalSummaryPlaceholder: "Edit the goal summary before confirming generation intent",
-    connectRelation: "Connect Relation",
-    relationType: "Relation Type",
-    saveSummary: "Save Summary",
-    automation: "Automation",
-    acceptance: "Acceptance Coverage",
-    verifyRoute: "Verify Route",
-    priorityAudit: "Priority Audit",
-    applied: "Applied",
-    deferred: "Deferred",
-    evidence: "Evidence"
+    primaryAction: "Primary action",
+    noConversations: "No conversation yet.",
+    noAutomation: "No automation log yet.",
+    noAcceptance: "No acceptance mapping yet.",
+    packetSummary: "Latest runtime summary",
+    proposalSummary: "Latest proposal summary"
   }
 };
 async function api(path, options = {}) {
@@ -21591,20 +21601,6 @@ async function apiOrDefault(path, fallback, options = {}) {
     throw error;
   }
 }
-function getNodePosition(drop, index, total) {
-  if (drop.position && Number.isFinite(drop.position.x) && Number.isFinite(drop.position.y)) {
-    return { x: drop.position.x, y: drop.position.y };
-  }
-  if (drop.type === "goal-origin") {
-    return { x: 420, y: 220 };
-  }
-  const radius = 280;
-  const angle = index / Math.max(1, total - 1) * Math.PI * 2;
-  return {
-    x: Math.round(440 + radius * Math.cos(angle)),
-    y: Math.round(260 + radius * Math.sin(angle))
-  };
-}
 function summarizeFileForAsset(file) {
   const type = file.type || "application/octet-stream";
   const textLike = type.startsWith("text/") || /(json|xml|javascript|typescript|markdown|csv|svg)/i.test(type);
@@ -21613,37 +21609,40 @@ function summarizeFileForAsset(file) {
   }
   return Promise.resolve(`[binary file] ${file.name} (${type}, ${file.size} bytes)`);
 }
+function statusClass(key) {
+  return `status-pill ${String(key || "neutral").replace(/[^a-z-]+/g, "-")}`;
+}
 function App() {
   const [state, setState] = (0, import_react.useState)(null);
+  const [loop, setLoop] = (0, import_react.useState)(null);
+  const [observability, setObservability] = (0, import_react.useState)(null);
   const [packets, setPackets] = (0, import_react.useState)([]);
   const [proposals, setProposals] = (0, import_react.useState)([]);
   const [conversations, setConversations] = (0, import_react.useState)([]);
-  const [observability, setObservability] = (0, import_react.useState)(null);
   const [language, setLanguage] = (0, import_react.useState)("zh");
-  const [assetModalOpen, setAssetModalOpen] = (0, import_react.useState)(false);
+  const [selectedDropId, setSelectedDropId] = (0, import_react.useState)("");
   const [assetInput, setAssetInput] = (0, import_react.useState)("");
   const [queuedFiles, setQueuedFiles] = (0, import_react.useState)([]);
-  const [selectedDropId, setSelectedDropId] = (0, import_react.useState)("");
-  const [llmInput, setLlmInput] = (0, import_react.useState)("");
-  const [dragging, setDragging] = (0, import_react.useState)(null);
   const [goalDraft, setGoalDraft] = (0, import_react.useState)("");
   const [editedSummary, setEditedSummary] = (0, import_react.useState)("");
   const [connectTargetId, setConnectTargetId] = (0, import_react.useState)("");
   const [connectType, setConnectType] = (0, import_react.useState)("references");
-  const canvasRef = (0, import_react.useRef)(null);
+  const [llmInput, setLlmInput] = (0, import_react.useState)("");
   const t = COPY[language];
   const refresh = (0, import_react.useCallback)(async () => {
-    const [stateData, packetData, observabilityData, proposalData, conversationData] = await Promise.all([
+    const [stateData, loopData, observabilityData, packetData, proposalData, conversationData] = await Promise.all([
       api("/api/state"),
-      apiOrDefault("/api/packets", { packets: [] }),
+      api("/api/loop"),
       api("/api/observability"),
+      apiOrDefault("/api/packets", { packets: [] }),
       apiOrDefault("/api/proposals", { proposals: [] }),
       api(`/api/conversations${selectedDropId ? `?dropId=${selectedDropId}` : ""}`)
     ]);
     (0, import_react.startTransition)(() => {
       setState(stateData);
-      setPackets(packetData.packets || []);
+      setLoop(loopData.loop);
       setObservability(observabilityData);
+      setPackets(packetData.packets || []);
       setProposals(proposalData.proposals || []);
       setConversations(conversationData.messages || []);
       setSelectedDropId((current) => current && stateData.drops.some((drop) => drop.dropId === current) ? current : "");
@@ -21652,75 +21651,24 @@ function App() {
   (0, import_react.useEffect)(() => {
     refresh().catch((error) => window.alert(String(error)));
   }, [refresh]);
-  (0, import_react.useEffect)(() => {
-    if (!dragging) {
-      return void 0;
-    }
-    const onMove = (event) => {
-      const canvas = canvasRef.current;
-      if (!canvas) {
-        return;
-      }
-      const rect = canvas.getBoundingClientRect();
-      setDragging((current) => current ? {
-        ...current,
-        x: Math.round(event.clientX - rect.left - current.offsetX),
-        y: Math.round(event.clientY - rect.top - current.offsetY)
-      } : null);
-    };
-    const onUp = async () => {
-      const finalDrag = dragging;
-      setDragging(null);
-      if (!finalDrag) {
-        return;
-      }
-      await api(`/api/drops/${finalDrag.dropId}`, {
-        method: "PUT",
-        body: JSON.stringify({ position: { x: finalDrag.x, y: finalDrag.y }, skipAutoFlow: true })
-      });
-      await refresh();
-    };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-    };
-  }, [dragging, refresh]);
-  const labels = (0, import_react.useMemo)(() => ({
-    packet: packets[0]?.response?.structured?.summary || packets[0]?.response?.summary || null
-  }), [packets]);
-  if (!state) {
-    return e("div", { className: "booting" }, t.booting);
-  }
-  const visibleDrops = state.drops.filter((drop) => drop.lifecycleState !== "archived");
-  const latestProposal = proposals[0] || null;
-  const latestVerify = state.verifyReports?.[0] || null;
-  const latestAutomation = observability?.automationTasks?.[0] || state.automationTasks?.[0] || null;
-  const latestVerifyCycle = state.verifyCycles?.[0] || null;
-  const dryRunStatus = state.well.dryRunStatus;
-  const canGenerate = dryRunStatus === "pass";
-  const canVerify = (state.candidates?.length ?? 0) > 0;
+  const visibleDrops = state?.drops?.filter((drop) => drop.lifecycleState !== "archived") || [];
   const selectedDrop = visibleDrops.find((drop) => drop.dropId === selectedDropId) || null;
-  const goalDrop = visibleDrops.find((drop) => drop.type === "goal-origin") || null;
-  const showGoalPanel = !selectedDrop || selectedDrop.type === "goal-origin";
-  const nodeMap = /* @__PURE__ */ new Map();
-  visibleDrops.forEach((drop, index) => {
-    const pos = dragging?.dropId === drop.dropId ? { x: dragging.x, y: dragging.y } : getNodePosition(drop, index, visibleDrops.length);
-    nodeMap.set(drop.dropId, { ...pos, width: 250, height: 110 });
-  });
-  const conversationItems = conversations;
-  const selectedSummary = selectedDrop ? [
-    `${selectedDrop.type} \xB7 ${selectedDrop.layer} \xB7 ${selectedDrop.priority}`,
-    selectedDrop.summary
-  ].join("\n") : "";
+  const latestAutomation = observability?.automationTasks?.[0] || state?.automationTasks?.[0] || null;
+  const latestVerify = state?.verifyReports?.[0] || null;
+  const latestVerifyCycle = state?.verifyCycles?.[0] || null;
+  const latestPacket = packets[0] || null;
+  const latestProposal = proposals[0] || null;
   (0, import_react.useEffect)(() => {
-    setGoalDraft(goalDrop?.summary || "");
-  }, [goalDrop?.dropId, goalDrop?.summary]);
+    const goal = visibleDrops.find((drop) => drop.type === "goal-origin");
+    setGoalDraft(goal?.summary || "");
+  }, [visibleDrops]);
   (0, import_react.useEffect)(() => {
     setEditedSummary(selectedDrop?.summary || "");
     setConnectTargetId("");
   }, [selectedDrop?.dropId, selectedDrop?.summary]);
+  if (!state || !loop) {
+    return e("div", { className: "booting" }, t.booting);
+  }
   async function handleAddAssets() {
     const blocks = assetInput.split(/\n\s*\n/g).map((item) => item.trim()).filter(Boolean);
     const tasks = [];
@@ -21734,46 +21682,12 @@ function App() {
       }));
     }
     if (tasks.length === 0) {
-      window.alert(t.addAssetHint);
+      window.alert(t.materialHint);
       return;
     }
     await Promise.all(tasks);
     setAssetInput("");
     setQueuedFiles([]);
-    setAssetModalOpen(false);
-    await refresh();
-  }
-  async function handleFileInput(event) {
-    const files = Array.from(event.target.files || []);
-    const loaded = await Promise.all(files.map(async (file) => ({ name: file.name, type: file.type, content: await summarizeFileForAsset(file) })));
-    setQueuedFiles((current) => [...current, ...loaded]);
-    event.target.value = "";
-  }
-  async function handleDropFiles(event) {
-    event.preventDefault();
-    const files = Array.from(event.dataTransfer?.files || []);
-    const loaded = await Promise.all(files.map(async (file) => ({ name: file.name, type: file.type, content: await summarizeFileForAsset(file) })));
-    setQueuedFiles((current) => [...current, ...loaded]);
-  }
-  async function handleOrganize() {
-    await api("/api/deep-organize", { method: "POST", body: JSON.stringify({ trigger: "ui.organize.assets" }) });
-    await refresh();
-  }
-  async function handlePreflight() {
-    await api("/api/dry-run", { method: "POST" });
-    await refresh();
-  }
-  async function handleGenerate() {
-    await api("/api/generate", { method: "POST" });
-    await refresh();
-  }
-  async function handleVerify() {
-    await api("/api/verify", { method: "POST" });
-    await refresh();
-  }
-  async function handleGoalDraft() {
-    const result = await api("/api/goal/draft", { method: "POST" });
-    setGoalDraft(result.goal?.summary || "");
     await refresh();
   }
   async function handleGoalStatus(status) {
@@ -21783,8 +21697,51 @@ function App() {
     });
     await refresh();
   }
+  async function handleGoalDraft() {
+    await api("/api/goal/draft", { method: "POST" });
+    await refresh();
+  }
+  async function handlePrimaryAction() {
+    if (!loop?.primaryAction) {
+      return;
+    }
+    switch (loop.primaryAction.key) {
+      case "add-material":
+        await handleAddAssets();
+        break;
+      case "confirm-goal":
+        await handleGoalStatus("confirmed");
+        break;
+      case "accept-direction":
+        await api("/api/assistant-loop/accept", {
+          method: "POST",
+          body: JSON.stringify({ note: "ui.accept-direction" })
+        });
+        await refresh();
+        break;
+      default:
+        await api("/api/assistant-loop", {
+          method: "POST",
+          body: JSON.stringify({ trigger: "ui.primary-action" })
+        });
+        await refresh();
+        break;
+    }
+  }
+  async function handleFileInput(event) {
+    const files = Array.from(event.target.files || []);
+    const loaded = await Promise.all(files.map(async (file) => ({
+      name: file.name,
+      type: file.type,
+      content: await summarizeFileForAsset(file)
+    })));
+    setQueuedFiles((current) => [...current, ...loaded]);
+    event.target.value = "";
+  }
   async function handleSaveSummary() {
-    if (!selectedDrop) return;
+    if (!selectedDrop) {
+      return;
+    }
     await api(`/api/drops/${selectedDrop.dropId}`, {
       method: "PUT",
       body: JSON.stringify({ summary: editedSummary, skipAutoFlow: false })
@@ -21817,248 +21774,288 @@ function App() {
     setLlmInput("");
     await refresh();
   }
-  function startDrag(event, drop) {
-    if (event.target.closest(".node-title-click")) {
-      return;
-    }
-    const rect = event.currentTarget.getBoundingClientRect();
-    const pos = drop.position || getNodePosition(drop, 0, visibleDrops.length);
-    setDragging({
-      dropId: drop.dropId,
-      offsetX: event.clientX - rect.left,
-      offsetY: event.clientY - rect.top,
-      x: pos.x,
-      y: pos.y
-    });
+  async function runManual(path, trigger) {
+    await api(path, { method: "POST", body: JSON.stringify(trigger ? { trigger } : {}) });
+    await refresh();
   }
   return e(
     "div",
-    { className: "stage-shell" },
+    { className: "app-shell" },
     e(
-      "main",
-      { className: "canvas-stage" },
-      e(
-        "section",
-        { className: "canvas-fullscreen", ref: canvasRef },
-        e(
-          "div",
-          { className: "canvas-action-group" },
-          e("button", { className: "ghost", disabled: !canVerify, onClick: handleVerify, type: "button" }, t.verify),
-          e("button", { onClick: handleOrganize, type: "button" }, t.organize),
-          e("button", { className: "ghost", onClick: handlePreflight, type: "button" }, t.preflight),
-          e("button", { disabled: !canGenerate, onClick: handleGenerate, type: "button" }, canGenerate ? t.generate : t.generateBlocked)
-        ),
-        e(
-          "div",
-          { className: "canvas-status-bar" },
-          e("div", null, `${t.status}: dry-run=${dryRunStatus}`),
-          latestProposal ? e("div", null, `${t.latestProposal}: ${latestProposal.summary}`) : null,
-          latestVerify ? e("div", null, `${t.latestVerify}: ${latestVerify.pass}`) : null
-        ),
-        state.relations.map((rel) => {
-          const from = nodeMap.get(rel.fromDropId);
-          const to = nodeMap.get(rel.toDropId);
-          if (!from || !to) return null;
-          const x1 = from.x + from.width / 2;
-          const y1 = from.y + from.height / 2;
-          const x2 = to.x + to.width / 2;
-          const y2 = to.y + to.height / 2;
-          const dx = x2 - x1;
-          const dy = y2 - y1;
-          const length = Math.sqrt(dx * dx + dy * dy);
-          const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-          return e("div", { key: rel.relationId, className: "edge", style: { left: `${x1}px`, top: `${y1}px`, width: `${length}px`, transform: `rotate(${angle}deg)` } });
-        }),
-        visibleDrops.map((drop, index) => {
-          const pos = dragging?.dropId === drop.dropId ? { x: dragging.x, y: dragging.y } : getNodePosition(drop, index, visibleDrops.length);
-          const isOrphan = !state.relations.some((rel) => rel.fromDropId === drop.dropId || rel.toDropId === drop.dropId);
-          return e(
-            "button",
-            {
-              key: drop.dropId,
-              className: `node stage-node ${selectedDropId === drop.dropId ? "selected" : ""} ${drop.layer}`,
-              style: { left: `${pos.x}px`, top: `${pos.y}px` },
-              type: "button",
-              onPointerDown: (event) => startDrag(event, drop),
-              onClick: () => setSelectedDropId(drop.dropId)
-            },
-            e("div", { className: "title node-title-click" }, drop.title),
-            e("div", { className: "summary" }, drop.summary),
-            isOrphan ? e("div", { className: "node-badge orphan" }, t.orphan) : null,
-            e("div", { className: "meta" }, `${drop.layer} \xB7 ${drop.priority} \xB7 ${t.dragHint}`)
-          );
-        }),
-        !selectedDrop ? e("div", { className: "canvas-empty-hint" }, t.selectPrompt) : null,
-        e(
-          "section",
-          { className: `asset-detail-card ${selectedDrop ? "visible" : ""}` },
-          e(
-            "div",
-            { className: "asset-detail-head" },
-            e(
-              "div",
-              null,
-              e("div", { className: "asset-detail-kicker" }, t.assetDetails),
-              e("div", { className: "asset-detail-title" }, selectedDrop ? selectedDrop.title : t.noSelection)
-            ),
-            e(
-              "div",
-              { className: "row" },
-              e("button", { className: "ghost", onClick: () => setLanguage((value) => value === "zh" ? "en" : "zh"), type: "button" }, `${t.language}: ${language === "zh" ? t.languageEn : t.languageZh}`),
-              selectedDrop ? e("button", { className: "ghost", onClick: () => setSelectedDropId(""), type: "button" }, t.close) : null
-            )
-          ),
-          selectedDrop ? e(
-            import_react.default.Fragment,
-            null,
-            showGoalPanel ? e(
-              import_react.default.Fragment,
-              null,
-              e("div", { className: "asset-detail-section-title" }, t.goalPanel),
-              e(
-                "div",
-                { className: "inline-form" },
-                e("textarea", {
-                  value: goalDraft,
-                  onChange: (event) => setGoalDraft(event.target.value),
-                  rows: 3,
-                  placeholder: t.goalSummaryPlaceholder
-                }),
-                e(
-                  "div",
-                  { className: "row wrap" },
-                  e("button", { className: "ghost", onClick: handleGoalDraft, type: "button" }, t.goalDraft),
-                  e("button", { onClick: () => handleGoalStatus("confirmed"), type: "button" }, t.goalConfirm),
-                  e("button", { className: "ghost", onClick: () => handleGoalStatus("revised"), type: "button" }, t.goalRevise)
-                )
-              )
-            ) : null,
-            e("div", { className: "asset-detail-meta" }, `${t.selectedAsset}: ${selectedDrop.type} \xB7 ${selectedDrop.layer} \xB7 ${selectedDrop.priority}`),
-            e(
-              "div",
-              { className: "inline-form" },
-              e("textarea", {
-                value: editedSummary,
-                onChange: (event) => setEditedSummary(event.target.value),
-                rows: 4
-              }),
-              e("button", { onClick: handleSaveSummary, type: "button" }, t.saveSummary)
-            ),
-            e("div", { className: "asset-detail-summary" }, selectedSummary),
-            e("div", { className: "asset-detail-section-title" }, t.connectRelation),
-            e(
-              "div",
-              { className: "inline-form" },
-              e(
-                "select",
-                {
-                  value: connectTargetId,
-                  onChange: (event) => setConnectTargetId(event.target.value)
-                },
-                e("option", { value: "" }, t.noSelection),
-                visibleDrops.filter((drop) => drop.dropId !== selectedDrop.dropId).map((drop) => e("option", { key: drop.dropId, value: drop.dropId }, drop.title))
-              ),
-              e(
-                "select",
-                {
-                  value: connectType,
-                  onChange: (event) => setConnectType(event.target.value)
-                },
-                ["references", "supports", "implements", "constrains", "derives"].map((item) => e("option", { key: item, value: item }, item))
-              ),
-              e("button", { onClick: handleConnectRelation, type: "button" }, t.connectRelation)
-            ),
-            latestAutomation ? e("div", { className: "asset-detail-section-title" }, t.automation) : null,
-            latestAutomation ? e(
-              "div",
-              { className: "conversation-list scrollable" },
-              latestAutomation.decisions?.map((decision) => e(
-                "div",
-                { key: decision.decisionId, className: "conversation-item system" },
-                e("div", { className: "conversation-role" }, `${decision.kind} \xB7 ${decision.source} \xB7 ${decision.applied ? t.applied : t.deferred}`),
-                e("div", { className: "conversation-content" }, `${decision.proposedValue}
-${decision.applied ? decision.appliedReason : decision.deferredReason}`)
-              ))
-            ) : null,
-            latestVerifyCycle ? e("div", { className: "asset-detail-section-title" }, t.verifyRoute) : null,
-            latestVerifyCycle ? e("div", { className: "muted-note" }, `${latestVerifyCycle.routeExecution?.route} \xB7 ${latestVerifyCycle.routeExecution?.actions?.join(", ")}`) : null,
-            latestVerifyCycle?.priorityLifecycleAudits?.length ? e("div", { className: "asset-detail-section-title" }, t.priorityAudit) : null,
-            latestVerifyCycle?.priorityLifecycleAudits?.length ? e(
-              "div",
-              { className: "conversation-list scrollable" },
-              latestVerifyCycle.priorityLifecycleAudits.map((audit) => e(
-                "div",
-                { key: `${audit.dropId}-${audit.createdAt}`, className: "conversation-item system" },
-                e("div", { className: "conversation-role" }, `${audit.dropId} \xB7 ${audit.decision}`),
-                e("div", { className: "conversation-content" }, `${audit.from} -> ${audit.to}
-${audit.reason}`)
-              ))
-            ) : null,
-            latestVerify ? e("div", { className: "asset-detail-section-title" }, t.acceptance) : null,
-            latestVerify ? e(
-              "div",
-              { className: "conversation-list scrollable" },
-              latestVerify.acceptanceItems?.map((item) => e(
-                "div",
-                { key: item.itemId, className: "conversation-item system" },
-                e("div", { className: "conversation-role" }, `${item.itemId} \xB7 ${item.status}`),
-                e("div", { className: "conversation-content" }, `${item.title}
-${item.evidence?.map((entry) => `${entry.kind}:${entry.ref}:${entry.detail}`).join("\n") || item.uncoveredReason || ""}`)
-              ))
-            ) : null,
-            e("div", { className: "asset-detail-section-title" }, t.conversation),
-            conversationItems.length ? e("div", { className: "conversation-list scrollable" }, conversationItems.map((item) => e("div", { key: item.messageId, className: `conversation-item ${item.role}` }, e("div", { className: "conversation-role" }, `${item.scope} \xB7 ${item.role}`), e("div", { className: "conversation-content" }, item.content)))) : e("div", { className: "muted-note" }, t.noConversation)
-          ) : e("div", { className: "muted-note" }, t.selectAssetTip)
-        ),
-        e(
-          "div",
-          { className: "composer-dock" },
-          e("div", { className: "scope-chip" }, selectedDrop ? t.assetScope : t.globalScope),
-          e("textarea", {
-            value: llmInput,
-            onChange: (event) => setLlmInput(event.target.value),
-            rows: 3,
-            placeholder: selectedDrop ? t.llmPlaceholderAsset : t.llmPlaceholderGlobal
-          }),
-          selectedDrop ? e("div", { className: "composer-selected-asset" }, `${t.activeAsset}: ${selectedDrop.title}`) : null,
-          e("button", { onClick: handleSend, type: "button" }, t.send)
-        ),
-        e("button", { className: "add-asset-fab", onClick: () => setAssetModalOpen(true), type: "button" }, t.addAsset)
-      )
-    ),
-    assetModalOpen ? e(
-      "div",
-      { className: "modal-backdrop", onClick: () => setAssetModalOpen(false) },
+      "header",
+      { className: "hero-card" },
       e(
         "div",
-        { className: "asset-modal", onClick: (event) => event.stopPropagation(), onDragOver: (event) => event.preventDefault(), onDrop: handleDropFiles },
+        { className: "hero-top" },
         e(
           "div",
-          { className: "sidebar-head" },
-          e("div", { className: "sidebar-title" }, t.addAssetTitle),
-          e("button", { className: "ghost", onClick: () => setAssetModalOpen(false), type: "button" }, t.close)
+          null,
+          e("div", { className: "kicker" }, "phonowell"),
+          e("h1", { className: "hero-title" }, loop.statusLabel),
+          e("p", { className: "hero-subtitle" }, loop.summary || t.subtitle)
         ),
-        e("div", { className: "asset-intake-hint" }, t.addAssetHint),
-        e("label", null, t.assetText, e("textarea", { value: assetInput, onChange: (event) => setAssetInput(event.target.value), rows: 8, placeholder: t.assetTextPlaceholder })),
+        e("button", {
+          className: "ghost small-button",
+          onClick: () => setLanguage((value) => value === "zh" ? "en" : "zh"),
+          type: "button"
+        }, `${t.language}: ${language === "zh" ? t.languageEn : t.languageZh}`)
+      ),
+      e(
+        "div",
+        { className: "hero-status-row" },
+        e("span", { className: statusClass(loop.status) }, loop.statusLabel),
+        loop.latestResult ? e("span", { className: statusClass(loop.latestResult.label) }, `${t.trust}: ${loop.latestResult.label}`) : null,
+        state.project?.name ? e("span", { className: statusClass("neutral") }, state.project.name) : null
+      ),
+      e(
+        "div",
+        { className: "hero-grid" },
+        e(
+          "article",
+          { className: "hero-block" },
+          e("div", { className: "hero-label" }, t.currentGoal),
+          e("div", { className: "hero-value" }, loop.currentGoalSummary || t.noGoal)
+        ),
+        e(
+          "article",
+          { className: "hero-block" },
+          e("div", { className: "hero-label" }, t.currentArtifact),
+          e("div", { className: "hero-value" }, loop.latestArtifact?.excerpt || t.noArtifact)
+        ),
+        e(
+          "article",
+          { className: "hero-block" },
+          e("div", { className: "hero-label" }, t.nextCheckpoint),
+          e("div", { className: "hero-value" }, loop.nextCheckpoint?.title || t.noCheckpoint),
+          e("div", { className: "hero-note" }, loop.nextCheckpoint?.summary || "")
+        )
+      ),
+      e("button", { className: "primary-cta", onClick: handlePrimaryAction, type: "button" }, loop.primaryAction.label),
+      e("p", { className: "primary-detail" }, `${t.primaryAction}: ${loop.primaryAction.detail}`)
+    ),
+    e(
+      "section",
+      { className: "default-grid" },
+      e(
+        "article",
+        { className: "panel" },
+        e("div", { className: "panel-title" }, t.materialTitle),
+        e("p", { className: "panel-hint" }, t.materialHint),
+        e("textarea", {
+          className: "panel-textarea",
+          value: assetInput,
+          onChange: (event) => setAssetInput(event.target.value),
+          rows: 7,
+          placeholder: t.materialPlaceholder
+        }),
         e(
           "label",
-          { className: "file-drop-label" },
-          t.dropFiles,
+          { className: "file-picker" },
+          t.queuedFiles,
           e("input", { type: "file", multiple: true, onChange: handleFileInput })
         ),
         e(
           "div",
           { className: "file-queue" },
-          queuedFiles.length ? queuedFiles.map((file, index) => e("div", { key: `${file.name}-${index}`, className: "file-chip" }, file.name)) : e("div", { className: "muted-note" }, t.noFiles)
+          queuedFiles.length ? queuedFiles.map((file, index) => e("span", { key: `${file.name}-${index}`, className: "file-chip" }, file.name)) : e("span", { className: "muted-note" }, t.noFiles)
         ),
+        e("button", { className: "ghost", onClick: handleAddAssets, type: "button" }, t.addMaterial)
+      ),
+      e(
+        "article",
+        { className: "panel" },
+        e("div", { className: "panel-title" }, t.goalTitle),
+        e("p", { className: "panel-hint" }, t.goalHint),
+        e("textarea", {
+          className: "panel-textarea",
+          value: goalDraft,
+          onChange: (event) => setGoalDraft(event.target.value),
+          rows: 7,
+          placeholder: t.goalPlaceholder
+        }),
         e(
           "div",
-          { className: "row" },
-          e("button", { onClick: handleAddAssets, type: "button" }, t.confirmAdd),
-          e("button", { className: "ghost", onClick: () => setAssetModalOpen(false), type: "button" }, t.cancel)
+          { className: "button-row" },
+          e("button", { className: "ghost", onClick: handleGoalDraft, type: "button" }, t.draftGoal),
+          e("button", { className: "ghost", onClick: () => handleGoalStatus("revised"), type: "button" }, t.reviseGoal),
+          e("button", { className: "ghost", onClick: () => handleGoalStatus("confirmed"), type: "button" }, t.confirmGoal)
+        )
+      ),
+      e(
+        "article",
+        { className: "panel" },
+        e("div", { className: "panel-title" }, t.artifactTitle),
+        e("p", { className: "panel-hint" }, t.artifactHint),
+        loop.latestArtifact ? e(
+          import_react.default.Fragment,
+          null,
+          e("div", { className: "artifact-excerpt" }, loop.latestArtifact.excerpt),
+          e(
+            "div",
+            { className: "meta-list" },
+            e("span", null, `${t.artifactCoverage}: ${loop.latestArtifact.coverageDropCount}`),
+            loop.latestArtifact.acceptedAt ? e("span", null, `${t.acceptedAt}: ${loop.latestArtifact.acceptedAt}`) : null,
+            e("span", null, loop.latestArtifact.createdAt)
+          )
+        ) : e("div", { className: "empty-state" }, t.noArtifact),
+        loop.latestResult ? e(
+          "div",
+          { className: "result-summary" },
+          e("div", { className: "result-label" }, `${t.resultSummary}: ${loop.latestResult.label}`),
+          e("div", null, loop.latestResult.summary)
+        ) : null
+      ),
+      e(
+        "article",
+        { className: "panel" },
+        e("div", { className: "panel-title" }, t.checkpointTitle),
+        e("p", { className: "panel-hint" }, t.checkpointHint),
+        loop.reviewCheckpoints.length ? e(
+          "div",
+          { className: "checkpoint-list" },
+          loop.reviewCheckpoints.map((checkpoint) => e(
+            "div",
+            { key: checkpoint.checkpointId, className: "checkpoint-card" },
+            e("div", { className: "checkpoint-title" }, checkpoint.title),
+            e("div", { className: "checkpoint-summary" }, checkpoint.summary),
+            e("div", { className: "checkpoint-meta" }, `${checkpoint.nextAction.label} \xB7 ${checkpoint.source}`)
+          ))
+        ) : e("div", { className: "empty-state" }, t.noReview)
+      )
+    ),
+    e(
+      "details",
+      { className: "diagnostics-shell" },
+      e("summary", null, t.diagnostics),
+      e("p", { className: "panel-hint diagnostics-hint" }, t.diagnosticsHint),
+      e(
+        "section",
+        { className: "diagnostics-grid" },
+        e(
+          "article",
+          { className: "panel diagnostics-panel" },
+          e("div", { className: "panel-title" }, t.manualControls),
+          e(
+            "div",
+            { className: "button-row" },
+            e("button", { className: "ghost", onClick: () => runManual("/api/deep-organize", "ui.manual.organize"), type: "button" }, t.organize),
+            e("button", { className: "ghost", onClick: () => runManual("/api/dry-run"), type: "button" }, t.preflight),
+            e("button", { className: "ghost", onClick: () => runManual("/api/generate"), type: "button" }, t.generate),
+            e("button", { className: "ghost", onClick: () => runManual("/api/verify"), type: "button" }, t.verify)
+          ),
+          e(
+            "div",
+            { className: "meta-stack" },
+            e("div", null, `${t.status}: ${loop.statusLabel}`),
+            e("div", null, `${t.packetSummary}: ${latestPacket?.response?.summary || "-"}`),
+            e("div", null, `${t.proposalSummary}: ${latestProposal?.summary || "-"}`)
+          )
+        ),
+        e(
+          "article",
+          { className: "panel diagnostics-panel" },
+          e("div", { className: "panel-title" }, t.materials),
+          e(
+            "div",
+            { className: "material-list" },
+            visibleDrops.map((drop) => e(
+              "button",
+              {
+                key: drop.dropId,
+                className: `material-item ${selectedDropId === drop.dropId ? "selected" : ""}`,
+                onClick: () => setSelectedDropId(drop.dropId),
+                type: "button"
+              },
+              e("div", { className: "material-title" }, drop.title),
+              e("div", { className: "material-meta" }, `${drop.type} \xB7 ${drop.layer} \xB7 ${drop.priority}`)
+            ))
+          ),
+          selectedDrop ? e(
+            "div",
+            { className: "selected-panel" },
+            e("div", { className: "panel-title minor" }, selectedDrop.title),
+            e("textarea", {
+              className: "panel-textarea compact",
+              value: editedSummary,
+              onChange: (event) => setEditedSummary(event.target.value),
+              rows: 4
+            }),
+            e("button", { className: "ghost", onClick: handleSaveSummary, type: "button" }, t.saveSummary),
+            e("div", { className: "panel-title minor" }, t.connectRelation),
+            e(
+              "select",
+              { className: "panel-select", value: connectTargetId, onChange: (event) => setConnectTargetId(event.target.value) },
+              e("option", { value: "" }, t.noSelection),
+              visibleDrops.filter((drop) => drop.dropId !== selectedDrop.dropId).map((drop) => e("option", { key: drop.dropId, value: drop.dropId }, drop.title))
+            ),
+            e(
+              "select",
+              { className: "panel-select", value: connectType, onChange: (event) => setConnectType(event.target.value) },
+              ["references", "supports", "implements", "constrains", "derives"].map((item) => e("option", { key: item, value: item }, item))
+            ),
+            e("button", { className: "ghost", onClick: handleConnectRelation, type: "button" }, t.connectRelation)
+          ) : e("div", { className: "empty-state" }, t.selectMaterial)
+        ),
+        e(
+          "article",
+          { className: "panel diagnostics-panel" },
+          e("div", { className: "panel-title" }, t.conversation),
+          selectedDrop ? e("div", { className: "meta-list" }, e("span", null, `${t.activeMaterial}: ${selectedDrop.title}`)) : null,
+          e(
+            "div",
+            { className: "conversation-list" },
+            conversations.length ? conversations.map((item) => e(
+              "div",
+              { key: item.messageId, className: `conversation-item ${item.role}` },
+              e("div", { className: "conversation-role" }, `${item.scope} \xB7 ${item.role}`),
+              e("div", { className: "conversation-content" }, item.content)
+            )) : e("div", { className: "empty-state" }, t.noConversations)
+          ),
+          e("textarea", {
+            className: "panel-textarea compact",
+            value: llmInput,
+            onChange: (event) => setLlmInput(event.target.value),
+            rows: 4,
+            placeholder: selectedDrop ? t.conversationPlaceholderAsset : t.conversationPlaceholderGlobal
+          }),
+          e("button", { className: "ghost", onClick: handleSend, type: "button" }, t.send)
+        ),
+        e(
+          "article",
+          { className: "panel diagnostics-panel" },
+          e("div", { className: "panel-title" }, t.rawRuntime),
+          e("div", { className: "panel-title minor" }, t.automation),
+          latestAutomation?.decisions?.length ? e(
+            "div",
+            { className: "checkpoint-list compact-list" },
+            latestAutomation.decisions.map((decision) => e(
+              "div",
+              { key: decision.decisionId, className: "checkpoint-card" },
+              e("div", { className: "checkpoint-title" }, `${decision.kind} \xB7 ${decision.approvalClass}`),
+              e("div", { className: "checkpoint-summary" }, decision.proposedValue),
+              e("div", { className: "checkpoint-meta" }, `${decision.confidence} \xB7 ${decision.applied ? "applied" : "deferred"}`)
+            ))
+          ) : e("div", { className: "empty-state" }, t.noAutomation),
+          e("div", { className: "panel-title minor" }, t.acceptance),
+          latestVerify?.acceptanceItems?.length ? e(
+            "div",
+            { className: "checkpoint-list compact-list" },
+            latestVerify.acceptanceItems.map((item) => e(
+              "div",
+              { key: item.itemId, className: "checkpoint-card" },
+              e("div", { className: "checkpoint-title" }, `${item.title} \xB7 ${item.status}`),
+              e("div", { className: "checkpoint-summary" }, item.uncoveredReason || item.evidence.map((entry) => `${entry.kind}:${entry.ref}`).join(", ") || "-")
+            ))
+          ) : e("div", { className: "empty-state" }, t.noAcceptance),
+          latestVerifyCycle ? e(
+            "div",
+            { className: "meta-stack" },
+            e("div", null, `${t.status}: ${latestVerifyCycle.routeExecution?.route || "-"}`),
+            e("div", null, `${t.evidence}: ${(latestVerifyCycle.routeExecution?.evidence || []).join(" | ") || "-"}`)
+          ) : null
         )
       )
-    ) : null
+    )
   );
 }
 (0, import_client.createRoot)(document.getElementById("app")).render(e(App));

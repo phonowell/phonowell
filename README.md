@@ -7,16 +7,26 @@ Drop everything in. Make a wish. Let it resonate into one artifact.
 `phonowell` is a local workbench for turning scattered input into one deliverable artifact.
 It manages active assets in `.phonowell`, mixes explicit runtime steps with bounded heuristics, and keeps generation incremental.
 
-User-facing actions are explicit:
+Default user-facing actions are:
 
-- `drop`
+- add material
+- confirm or revise goal
+- continue the assistant loop or review the requested checkpoint
+- accept the current artifact direction
+
+The default path is one public, resumable assistant loop.
+It may internally run organize, preflight, generate, and verify, but those are not the primary user controls.
+
+Manual controls remain available as diagnostics or fallback when trust, safety, or correction cost requires them:
+
 - `connect`
+- summary edit
 - `organize`
 - `preflight`
 - `generate`
 - `verify`
 
-System loops are explicit or queued with audit trails:
+System automation remains explicit and auditable:
 
 - `POST /api/deep-organize` runs packet-backed `analyze -> apply -> gap-fill -> apply`
 - `POST /api/dry-run` runs the quantified preflight gate
@@ -48,6 +58,7 @@ pnpm run import:assets
 ## Core API
 
 - `GET /api/state`
+- `GET /api/loop`
 - `GET /api/projects`
 - `POST /api/projects`
 - `PUT /api/projects/:slug`
@@ -56,6 +67,8 @@ pnpm run import:assets
 - `POST /api/relations`
 - `POST /api/goal/draft`
 - `PUT /api/goal`
+- `POST /api/assistant-loop`
+- `POST /api/assistant-loop/accept`
 - `POST /api/deep-organize`
 - `POST /api/dry-run`
 - `POST /api/conversations`
@@ -81,6 +94,8 @@ Enable with `PHONOWELL_ENABLE_DEBUG_API=1` when you need low-level runtime contr
 - workdir root is `.phonowell`
 - active runtime is project-scoped: `.phonowell/projects/<slug>/state.json`
 - active assets only; legacy is archive-only
+- default orchestration is resumable from persisted project state through `/api/assistant-loop`
+- final acceptance judgment is recorded explicitly through `/api/assistant-loop/accept`
 - packet runtime uses local Codex SDK auth/config from `~/.codex`
 - `pnpm run core-gate` uses the normal runtime path
 - `pnpm run core-gate:offline` is the stable fallback and forces `PHONOWELL_DISABLE_CODEX_RUNTIME=1`
