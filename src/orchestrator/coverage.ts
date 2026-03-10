@@ -4,6 +4,7 @@ import { loadAssetContractManifest } from "./asset-contracts.js";
 import type { CatalogAsset, PacketRecord, SchemaValidationReport, WellState } from "./types.js";
 import { getSchemaValidationReport } from "./validator.js";
 import { resolveFromAppRoot } from "../runtime-paths.js";
+import { runClosureScenario } from "./scenario-service.js";
 
 export interface AssetCoverageItem {
   dropId: string;
@@ -53,7 +54,10 @@ function requirementEvidence(requirement: string, state: WellState, schemaValida
     case "project-layer":
       return { pass: Boolean(state.project.projectId && state.project.slug), note: `project=${state.project.slug}` };
     case "generation-diff":
-      return { pass: Boolean(state.candidates[0]?.coverageDropIds?.length) || state.pendingChangedDropIds.length >= 0, note: `pending-changed-count=${state.pendingChangedDropIds.length}` };
+      return {
+        pass: Boolean(state.candidates[0]?.coverageDropIds?.length) && Boolean(state.candidates[0]?.relationKeys?.length),
+        note: `candidate-count=${state.candidates.length};latest-coverage=${state.candidates[0]?.coverageDropIds?.length ?? 0};latest-relations=${state.candidates[0]?.relationKeys?.length ?? 0}`,
+      };
     case "relation-graph":
       return { pass: relationCount(state) > 0, note: `relation-count=${state.relations.length}` };
     case "webui-surface":
@@ -69,8 +73,11 @@ function requirementEvidence(requirement: string, state: WellState, schemaValida
       };
     case "verify-loop":
       return {
-        pass: fileExists("src/orchestrator/engine.ts") && state.verifyCycles.length >= 0,
-        note: `verify-report-count=${state.verifyReports.length};verify-cycle-count=${state.verifyCycles.length}`,
+        pass: fileExists("src/orchestrator/engine.ts")
+          && state.verifyReports.length >= 1
+          && state.verifyCycles.length >= 1
+          && state.selfIterationRecords.length >= 1,
+        note: `verify-report-count=${state.verifyReports.length};verify-cycle-count=${state.verifyCycles.length};self-iteration-count=${state.selfIterationRecords.length}`,
       };
     case "layer-visibility":
       return { pass: hasLayer(state, "contract") && hasLayer(state, "reference") && hasLayer(state, "policy"), note: `layers=${["contract", "policy", "reference"].map((layer) => `${layer}:${state.drops.filter((drop) => drop.layer === layer).length}`).join(",")}` };
@@ -145,9 +152,8 @@ export function buildCoverageReport(catalog: CatalogAsset[], state: WellState): 
   };
 }
 
-export function buildCoverageScenarioReport(): CoverageReport {
-  const scenarioEngine = new PhonoWellEngine();
-  scenarioEngine.bootstrapInitialState();
-  scenarioEngine.runDryRun();
+export async function buildCoverageScenarioReport(): Promise<CoverageReport> {
+  const scenarioEngine = new PhonoWellEngine({ forceFallbackRuntime: true });
+  await runClosureScenario(scenarioEngine, "coverage.scenario");
   return buildCoverageReport(scenarioEngine.getCatalog(), scenarioEngine.getState());
 }

@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = process.cwd();
@@ -6,6 +6,7 @@ const docsRoot = resolve(root, "docs", "assets");
 const activeFiles = JSON.parse(readFileSync(resolve(root, "src", "config", "active-asset-files.json"), "utf8"));
 const outputDir = resolve(root, "generated");
 const outputFile = resolve(outputDir, "asset-contract-manifest.json");
+const tempOutputFile = `${outputFile}.tmp`;
 
 const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?/;
 
@@ -111,11 +112,12 @@ const assets = activeFiles.map((relativeFile) => {
 });
 
 mkdirSync(outputDir, { recursive: true });
-writeFileSync(outputFile, JSON.stringify({
+writeFileSync(tempOutputFile, JSON.stringify({
   schemaVersion: "1.0.0",
   compiledAt,
   assetCount: assets.length,
   assets,
 }, null, 2));
+renameSync(tempOutputFile, outputFile);
 
 console.log(`compiled asset contract manifest -> ${outputFile}`);

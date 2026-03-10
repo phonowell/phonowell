@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
@@ -31,7 +31,7 @@ function makeCtx(input: {
   return {
     req: makeReq(input.method, input.body),
     method: input.method,
-    url: new URL(`http://localhost:8787${input.path}`),
+    url: new URL(`http://localhost:38888${input.path}`),
     engine: input.engine,
     persistCurrentState: input.persistCurrentState ?? (() => {}),
     debugMode: input.debugMode ?? false,
@@ -157,6 +157,111 @@ test("assistant loop checkpoint resumes from persisted state", { concurrency: fa
   });
 });
 
+test("persistCurrentState archives structured run logs to disk", { concurrency: false }, async () => {
+  await withWorkspaceRoot("phonowell-log-archive-", async () => {
+    const { engine } = await import("../orchestrator/index.js");
+    const { PhonoWellEngine } = await import("../orchestrator/engine.js");
+    const { getActiveProject, persistCurrentState } = await import("../orchestrator/store.js");
+    const { runEventCursorFile, runEventLogFile } = await import("../orchestrator/log-archive.js");
+
+    engine.replaceState(new PhonoWellEngine().getState());
+    engine.bootstrapInitialState();
+    engine.runDryRun();
+    persistCurrentState();
+
+    const project = getActiveProject();
+    const logFile = runEventLogFile(project);
+    const cursorFile = runEventCursorFile(project);
+    assert.equal(existsSync(logFile), true);
+    assert.equal(existsSync(cursorFile), true);
+
+    const events = readFileSync(logFile, "utf8")
+      .trim()
+      .split("\n")
+      .filter((line) => line.length > 0)
+      .map((line) => JSON.parse(line));
+    assert.equal(events.length >= 2, true);
+    assert.equal(events[0]?.eventType, "run-log");
+    assert.equal(events[0]?.projectSlug, project.slug);
+    assert.equal(typeof events[0]?.stateSummary?.pendingChangedDropCount, "number");
+    assert.equal(typeof events[0]?.stateSummary?.assistantLoopStatus, "string");
+  });
+});
+
+test("run log archive preserves history beyond in-memory window without duplicate appends", { concurrency: false }, async () => {
+  await withWorkspaceRoot("phonowell-log-archive-window-", async () => {
+    const { engine } = await import("../orchestrator/index.js");
+    const { PhonoWellEngine } = await import("../orchestrator/engine.js");
+    const { getActiveProject, persistCurrentState } = await import("../orchestrator/store.js");
+    const { runEventLogFile } = await import("../orchestrator/log-archive.js");
+
+    engine.replaceState(new PhonoWellEngine().getState());
+    engine.bootstrapInitialState();
+    persistCurrentState();
+
+    for (let index = 0; index < 60; index += 1) {
+      engine.runDryRun();
+      persistCurrentState();
+    }
+
+    const project = getActiveProject();
+    const logFile = runEventLogFile(project);
+    const readEvents = () => readFileSync(logFile, "utf8")
+      .trim()
+      .split("\n")
+      .filter((line) => line.length > 0)
+      .map((line) => JSON.parse(line));
+
+    const events = readEvents();
+    const runIds = events.map((event) => event.runId as string);
+    assert.equal(new Set(runIds).size, runIds.length);
+    assert.equal(events.length > engine.getState().runLogs.length, true);
+    assert.equal(events.length > 50, true);
+
+    const beforeCount = events.length;
+    persistCurrentState();
+    const after = readEvents();
+    assert.equal(after.length, beforeCount);
+  });
+});
+
+test("run log archive keeps per-event state snapshots instead of one shared persisted state", { concurrency: false }, async () => {
+  await withWorkspaceRoot("phonowell-log-archive-snapshots-", async () => {
+    const { engine } = await import("../orchestrator/index.js");
+    const { PhonoWellEngine } = await import("../orchestrator/engine.js");
+    const { getActiveProject, persistCurrentState } = await import("../orchestrator/store.js");
+    const { runEventLogFile } = await import("../orchestrator/log-archive.js");
+
+    engine.replaceState(new PhonoWellEngine().getState());
+    engine.bootstrapInitialState();
+    engine.ingestDrop({
+      type: "note",
+      source: "user",
+      title: "Snapshot source",
+      summary: "This should create a changed-drop log snapshot.",
+      preserveOrphan: false,
+    });
+    const state = engine.getState();
+    state.pendingChangedDropIds = [];
+    engine.replaceState(state);
+    engine.runDryRun();
+    persistCurrentState();
+
+    const project = getActiveProject();
+    const events = readFileSync(runEventLogFile(project), "utf8")
+      .trim()
+      .split("\n")
+      .filter((line) => line.length > 0)
+      .map((line) => JSON.parse(line));
+    const assetDropped = events.find((event) => event.summary === "asset.dropped");
+    const dryRun = events.find((event) => typeof event.summary === "string" && event.summary.startsWith("dry-run "));
+
+    assert.ok(assetDropped);
+    assert.ok(dryRun);
+    assert.equal(assetDropped.stateSummary.pendingChangedDropCount > dryRun.stateSummary.pendingChangedDropCount, true);
+  });
+});
+
 test("accepted direction survives restart until new changes appear", { concurrency: false }, async () => {
   await withWorkspaceRoot("phonowell-accepted-loop-", async () => {
     const { engine } = await import("../orchestrator/index.js");
@@ -175,26 +280,48 @@ test("accepted direction survives restart until new changes appear", { concurren
     });
     const state = engine.getState();
     state.pendingChangedDropIds = [];
-    state.candidates.unshift({
-      candidateId: "candidate-persisted-accept",
+	    state.candidates.unshift({
+	      candidateId: "candidate-persisted-accept",
       wellId: state.well.id,
       content: "accepted candidate",
-      coverageDropIds: state.drops.map((drop) => drop.dropId),
-      createdAt: new Date().toISOString(),
-    });
-    state.verifyReports.unshift({
-      pass: true,
-      issues: [],
-      suggestions: [],
-      acceptanceCoverageDropIds: [state.well.acceptanceDropId],
-      acceptanceItems: [],
-      changedDropCoverage: [],
-      uncoveredAcceptanceItemIds: [],
-      selfIterationEvidence: ["run-1:verify:pass"],
-      changedDropIds: [],
-      rerunConsistent: true,
-      createdAt: new Date().toISOString(),
-    });
+	      coverageDropIds: state.drops.map((drop) => drop.dropId),
+	      createdAt: new Date().toISOString(),
+	    });
+	    state.verifyReports.unshift({
+	      pass: true,
+	      issues: [],
+	      suggestions: [],
+	      acceptanceCoverageDropIds: [state.well.originDropId!],
+	      acceptanceItems: [{
+	        itemId: "accept-ready-item",
+	        title: "Ready acceptance evidence",
+	        source: "definition-of-done",
+	        status: "covered",
+	        coveredByDropIds: [state.well.originDropId!],
+	        evidence: [{
+	          kind: "drop",
+	          ref: state.well.originDropId!,
+	          detail: "ready acceptance evidence",
+	          source: "manual-link",
+	        }],
+	        confidence: 0.96,
+	      }],
+	      changedDropCoverage: [{
+	        dropId: state.well.originDropId!,
+	        acceptanceItemIds: ["accept-ready-item"],
+	        evidence: [{
+	          kind: "drop",
+	          ref: state.well.originDropId!,
+	          detail: "ready acceptance evidence",
+	          source: "manual-link",
+	        }],
+	      }],
+	      uncoveredAcceptanceItemIds: [],
+	      selfIterationEvidence: ["run-1:dry-run:pass", "run-2:generate:pass"],
+	      changedDropIds: [state.well.originDropId!],
+	      rerunConsistent: true,
+	      createdAt: new Date().toISOString(),
+	    });
     engine.replaceState(state);
     engine.acceptCurrentDirection("test.persisted-accept");
     persistCurrentState();

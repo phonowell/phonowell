@@ -71,6 +71,7 @@ export async function handleRuntimeRoutes(ctx: ApiContext) {
         dropId: body.dropId,
         scope: body.scope ?? (body.dropId ? "asset" : "global"),
       });
+      persistCurrentState();
       return json(result);
     } catch (error) {
       return json({ error: String((error as Error).message) }, 400);

@@ -283,6 +283,19 @@ export interface RunLog {
   createdAt: string;
 }
 
+export interface RunLogStateSummary {
+  wellStatus: WellState["well"]["status"];
+  dryRunStatus: WellState["well"]["dryRunStatus"];
+  acceptanceStatus: WellState["well"]["acceptanceStatus"];
+  pendingChangedDropCount: number;
+  unresolvedQuestionCount: number;
+  automationTaskCount: number;
+  latestCandidateId?: string;
+  latestVerifyPass?: boolean;
+  assistantLoopStatus: WellState["assistantLoop"]["status"];
+  assistantLoopUserState: WellState["assistantLoop"]["userState"];
+}
+
 export interface ConversationMessage {
   messageId: string;
   dropId?: string;
@@ -533,6 +546,10 @@ export interface PacketRecord {
   request: PacketRequest;
   response: PacketResponse;
   createdAt: string;
+}
+
+export interface PacketRunOptions {
+  forceFallback?: boolean;
 }
 
 export interface SchemaValidationIssue {

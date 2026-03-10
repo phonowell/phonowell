@@ -68,6 +68,63 @@ function traceLinks(drop: Drop): AcceptanceTraceLink[] {
   return drop.acceptanceTraceLinks ?? [];
 }
 
+const ACCEPTANCE_STOPWORDS = new Set([
+  "a",
+  "an",
+  "and",
+  "are",
+  "as",
+  "at",
+  "be",
+  "before",
+  "by",
+  "can",
+  "conditions",
+  "defines",
+  "done",
+  "for",
+  "how",
+  "in",
+  "is",
+  "it",
+  "means",
+  "must",
+  "of",
+  "on",
+  "or",
+  "the",
+  "this",
+  "to",
+  "truth",
+  "what",
+  "with",
+]);
+
+function normalizeToken(token: string): string {
+  if (token === "verified" || token === "verification") {
+    return "verify";
+  }
+  if (token === "generated" || token === "generation") {
+    return "generate";
+  }
+  if (token === "running" || token === "runnable") {
+    return "run";
+  }
+  if (token === "editing") {
+    return "edit";
+  }
+  if (token === "confirming" || token === "confirmed") {
+    return "confirm";
+  }
+  return token;
+}
+
+function tokenizeForAcceptance(input: string): string[] {
+  return [...input.toLowerCase().matchAll(/[a-z0-9]+/g)]
+    .map((match) => normalizeToken(match[0]))
+    .filter((token) => token.length >= 3 && !ACCEPTANCE_STOPWORDS.has(token));
+}
+
 export function inferTraceLinksFromText(drop: Drop, state: WellState): AcceptanceTraceLink[] {
   const itemMap = new Map(listAcceptanceItems(state).map((item) => [item.itemId, item]));
   const explicit = new Set<string>();
@@ -93,6 +150,37 @@ export function inferTraceLinksFromText(drop: Drop, state: WellState): Acceptanc
   }));
 }
 
+export function inferTraceLinksFromKeywords(drop: Drop, state: WellState): AcceptanceTraceLink[] {
+  const combined = `${drop.title}\n${drop.summary}\n${drop.content ?? ""}`;
+  const dropTokens = new Set(tokenizeForAcceptance(combined));
+  if (dropTokens.size === 0) {
+    return [];
+  }
+
+  return listAcceptanceItems(state).flatMap((item) => {
+    const itemTokens = [...new Set(tokenizeForAcceptance(item.title))];
+    if (itemTokens.length === 0) {
+      return [];
+    }
+    const shared = itemTokens.filter((token) => dropTokens.has(token));
+    const coverageRatio = shared.length / itemTokens.length;
+    if (shared.length < 2 || coverageRatio < 0.3) {
+      return [];
+    }
+    return [{
+      itemId: item.itemId,
+      source: "heuristic-link" as const,
+      rationale: `keyword overlap with acceptance item: ${shared.slice(0, 4).join(", ")}`,
+      evidence: [{
+        kind: "drop" as const,
+        ref: drop.dropId,
+        detail: `acceptance keyword overlap: ${shared.slice(0, 4).join(", ")}`,
+        source: "heuristic-link" as const,
+      }],
+    }];
+  });
+}
+
 export function appendAcceptanceTraceLinks(drop: Drop, links: AcceptanceTraceLink[]): void {
   const existing = traceLinks(drop);
   const byId = new Map(existing.map((link) => [link.itemId, link]));
@@ -113,6 +201,26 @@ export function appendAcceptanceTraceLinks(drop: Drop, links: AcceptanceTraceLin
     });
   }
   drop.acceptanceTraceLinks = [...byId.values()];
+}
+
+export function refreshAcceptanceTraceLinks(drop: Drop, state: WellState): boolean {
+  const preserved = traceLinks(drop)
+    .filter((link) => link.source === "manual-link" || link.source === "proposal-link")
+    .map((link) => ({
+      ...link,
+      evidence: dedupeEvidence(link.evidence),
+    }));
+  const draft: Drop = {
+    ...drop,
+    acceptanceTraceLinks: preserved,
+  };
+  appendAcceptanceTraceLinks(draft, inferTraceLinksFromText(drop, state));
+  appendAcceptanceTraceLinks(draft, inferTraceLinksFromKeywords(drop, state));
+
+  const previous = JSON.stringify(traceLinks(drop));
+  const next = JSON.stringify(draft.acceptanceTraceLinks ?? []);
+  drop.acceptanceTraceLinks = draft.acceptanceTraceLinks ?? [];
+  return previous !== next;
 }
 
 export function buildAcceptanceCoverage(state: WellState, changedDropIds: string[]): {

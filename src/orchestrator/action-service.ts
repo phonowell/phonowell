@@ -35,6 +35,8 @@ import {
   updateUnresolvedQuestions as updateUnresolvedQuestionsInState,
   updateWish,
 } from "./state-edit-service.js";
+import { refreshAcceptanceTraceLinks } from "./acceptance-traceability.js";
+import { attachRunLogStateSummary } from "./run-log-state.js";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -78,7 +80,11 @@ export function applyActionResult<T>(state: WellState, result: ActionResult<T>):
     }
   }
   if (result.logs.length > 0) {
-    state.runLogs.unshift(...[...result.logs].reverse());
+    const logs = result.logs.map((log) => ({
+      ...log,
+      payload: attachRunLogStateSummary(log.payload, state),
+    }));
+    state.runLogs.unshift(...[...logs].reverse());
     state.runLogs = state.runLogs.slice(0, 50);
   }
   return result.value;
@@ -103,6 +109,7 @@ export function ensureIntentHypothesisAction(state: WellState): ActionResult<{ h
     existing.content = hypothesisSummary;
     existing.updatedAt = nowIso();
     existing.confidence = 0.91;
+    refreshAcceptanceTraceLinks(existing, state);
     return {
       value: { hypothesisDropId: existing.dropId },
       changedDropIds: [existing.dropId],
@@ -138,6 +145,7 @@ export function ensureIntentHypothesisAction(state: WellState): ActionResult<{ h
     updatedAt: createdAt,
   };
   state.drops.push(created);
+  refreshAcceptanceTraceLinks(created, state);
   return {
     value: { hypothesisDropId: created.dropId },
     changedDropIds: [created.dropId],

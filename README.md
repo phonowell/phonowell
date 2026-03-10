@@ -42,7 +42,7 @@ pnpm install
 pnpm run dev
 ```
 
-Open `http://localhost:8787`.
+Open `http://localhost:38888`.
 
 ## Commands
 
@@ -67,6 +67,7 @@ pnpm run import:assets
 - `POST /api/relations`
 - `POST /api/goal/draft`
 - `PUT /api/goal`
+- `POST /api/acceptance-links`
 - `POST /api/assistant-loop`
 - `POST /api/assistant-loop/accept`
 - `POST /api/deep-organize`
@@ -75,7 +76,6 @@ pnpm run import:assets
 - `POST /api/generate`
 - `POST /api/verify`
 - `GET /api/observability`
-- `POST /api/import-assets`
 
 ## Debug API
 
@@ -88,11 +88,13 @@ Enable with `PHONOWELL_ENABLE_DEBUG_API=1` when you need low-level runtime contr
 - `GET /api/proposals`
 - `POST /api/proposals/:id/apply`
 - `POST /api/proposals/:id/reject`
+- `POST /api/import-assets`
 
 ## Runtime Notes
 
 - workdir root is `.phonowell`
 - active runtime is project-scoped: `.phonowell/projects/<slug>/state.json`
+- append-only runtime log archive is project-scoped: `.phonowell/projects/<slug>/logs/run-events.jsonl`
 - active assets only; legacy is archive-only
 - default orchestration is resumable from persisted project state through `/api/assistant-loop`
 - final acceptance judgment is recorded explicitly through `/api/assistant-loop/accept`

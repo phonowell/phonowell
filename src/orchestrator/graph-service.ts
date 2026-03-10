@@ -13,6 +13,7 @@ import type {
   RelationType,
   WellState,
 } from "./types.js";
+import { refreshAcceptanceTraceLinks } from "./acceptance-traceability.js";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -169,6 +170,7 @@ export function applyProposalToState(input: {
         existing.purpose = patch.purpose ?? existing.purpose;
         existing.parentDropId = patch.parentDropId ?? existing.parentDropId;
         existing.updatedAt = nowIso();
+        refreshAcceptanceTraceLinks(existing, state);
         markChanged(existing.dropId);
         changedDropIds.add(existing.dropId);
         appliedAssetPatchCount += 1;
@@ -179,6 +181,7 @@ export function applyProposalToState(input: {
     if (patch.action === "add") {
       const next = createGeneratedDrop(state, patch);
       state.drops.push(next);
+      refreshAcceptanceTraceLinks(next, state);
       autoAttachDrop(state, next);
       markChanged(next.dropId);
       changedDropIds.add(next.dropId);
@@ -217,17 +220,22 @@ export function runHeuristicAnalyze(state: WellState, markChanged: (dropId?: str
   state.well.status = "analyze";
   for (const drop of state.drops) {
     if (drop.type === "goal-origin") {
+      if (refreshAcceptanceTraceLinks(drop, state)) {
+        markChanged(drop.dropId);
+      }
       continue;
     }
-    if ((drop.summary ?? "").trim().length >= 24) {
-      continue;
+    if ((drop.summary ?? "").trim().length < 24) {
+      const enriched = `${drop.title}: ${drop.summary}. analyzed-for ${state.well.artifactType} convergence.`;
+      drop.summary = enriched;
+      drop.content = enriched;
+      drop.confidence = Math.max(drop.confidence, 0.81);
+      drop.updatedAt = nowIso();
+      markChanged(drop.dropId);
     }
-    const enriched = `${drop.title}: ${drop.summary}. analyzed-for ${state.well.artifactType} convergence.`;
-    drop.summary = enriched;
-    drop.content = enriched;
-    drop.confidence = Math.max(drop.confidence, 0.81);
-    drop.updatedAt = nowIso();
-    markChanged(drop.dropId);
+    if (refreshAcceptanceTraceLinks(drop, state)) {
+      markChanged(drop.dropId);
+    }
   }
 }
 
@@ -285,6 +293,7 @@ export function runHeuristicGapCheck(state: WellState, markChanged: (dropId?: st
     updatedAt: createdAt,
   };
   state.drops.push(next);
+  refreshAcceptanceTraceLinks(next, state);
   markChanged(next.dropId);
   return { createdGapDropId: next.dropId };
 }

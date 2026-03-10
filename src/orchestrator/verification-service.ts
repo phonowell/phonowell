@@ -30,6 +30,23 @@ function makeCycleId(state: WellState, report: VerifyReport): string {
   })).slice(1, 9)}`;
 }
 
+function sameDropIdSet(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+  const leftSet = new Set(left);
+  return right.every((item) => leftSet.has(item));
+}
+
+function readRouteCount(cycle: VerifyCycleRecord | undefined, kind: "fail" | "warn"): number | undefined {
+  const entry = cycle?.verifyRouteEvidence.find((item) => item.startsWith(`${kind}-count=`));
+  if (!entry) {
+    return undefined;
+  }
+  const parsed = Number(entry.slice(`${kind}-count=`.length));
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 export function pickVerifyRoute(
   report: VerifyReport,
   dryRunGate: DryRunReport["gateResult"] | undefined,
@@ -64,15 +81,57 @@ export function evaluatePriorityLifecycle(state: WellState): Array<{ dropId: str
   return changes;
 }
 
+export function listVerifyCoverageGaps(report: VerifyReport): string[] {
+  const gaps: string[] = [];
+  if (!report.pass) {
+    gaps.push("verify report did not pass");
+  }
+  if (report.acceptanceCoverageDropIds.length === 0) {
+    gaps.push("no acceptance coverage drop ids recorded");
+  }
+  if (report.acceptanceItems.length === 0) {
+    gaps.push("no acceptance items recorded");
+  }
+  if (!report.acceptanceItems.some((item) => item.evidence.length > 0)) {
+    gaps.push("no acceptance evidence attached");
+  }
+  if (report.changedDropCoverage.length === 0) {
+    gaps.push("no changed-drop coverage recorded");
+  }
+  if (!report.changedDropCoverage.some((item) => item.acceptanceItemIds.length > 0)) {
+    gaps.push("changed drops do not map to acceptance items");
+  }
+  if (report.uncoveredAcceptanceItemIds.length > 0) {
+    gaps.push("acceptance items remain uncovered");
+  }
+  return gaps;
+}
+
+export function listVerifyAcceptanceGaps(report: VerifyReport): string[] {
+  const gaps = listVerifyCoverageGaps(report);
+  if (report.selfIterationEvidence.length < 2) {
+    gaps.push("self-iteration evidence is incomplete");
+  }
+  if (!report.rerunConsistent) {
+    gaps.push("rerun consistency is missing");
+  }
+  return gaps;
+}
+
+export function isVerifyReportReadyForAcceptance(report: VerifyReport): boolean {
+  return listVerifyAcceptanceGaps(report).length === 0;
+}
+
 export function buildVerifyReport(input: {
   state: WellState;
   packetId: string;
   dryRunReport: DryRunReport;
+  changedDropIds?: string[];
 }): VerifyReport {
   const { state, packetId, dryRunReport } = input;
   const issues: string[] = [];
   const suggestions: string[] = [];
-  const changedDropIds = [...state.pendingChangedDropIds];
+  const changedDropIds = [...(input.changedDropIds ?? state.pendingChangedDropIds)];
   const acceptance = buildAcceptanceCoverage(state, changedDropIds);
 
   if (dryRunReport.gateResult === "fail") {
@@ -99,7 +158,9 @@ export function buildVerifyReport(input: {
     unresolved: state.unresolvedQuestions,
   }));
   const lastRecord = state.selfIterationRecords[0];
-  const rerunConsistent = lastRecord ? lastRecord.stateHash === currentStateHash : true;
+  const rerunConsistent = lastRecord
+    ? !sameDropIdSet(lastRecord.changedDropIds, changedDropIds) || lastRecord.stateHash === currentStateHash
+    : true;
 
   if (selfIterationEvidence.length < 2) {
     issues.push("self-iteration evidence packet is incomplete");
@@ -139,13 +200,31 @@ export function buildVerifyCycle(input: {
   const failCount = state.well.dryRunReport?.failCount ?? 0;
   const warnCount = state.well.dryRunReport?.warnCount ?? 0;
   const verifyRoute = pickVerifyRoute(report, state.well.dryRunReport?.gateResult, state.unresolvedQuestions.length);
-  const p0Drops = state.drops.filter((drop) => drop.priority === "p0");
   const promotedToP0 = priorityRecommendations.filter((change) => change.to === "p0").length;
-  const repeatedRoute = state.verifyCycles
-    .slice(0, 1)
-    .some((cycle) => cycle.verifyRoute === verifyRoute && (failCount + warnCount) >= 1);
+  const previousCycle = state.verifyCycles[0];
+  const previousFailCount = readRouteCount(previousCycle, "fail");
+  const previousWarnCount = readRouteCount(previousCycle, "warn");
+  const repeatedRoute = Boolean(
+    previousCycle
+      && previousCycle.verifyRoute === verifyRoute
+      && (failCount + warnCount) >= 1
+      && previousFailCount !== undefined
+      && previousWarnCount !== undefined
+      && failCount >= previousFailCount
+      && warnCount >= previousWarnCount,
+  );
   const bypassViolation = state.well.dryRunReport?.gateResult === "fail" && verifyRoute === "regenerate";
-  const overrideNeeded = !report.pass && (p0Drops.length > 2 || promotedToP0 > 2 || repeatedRoute || bypassViolation);
+  const previousAudits = previousCycle?.priorityLifecycleAudits ?? [];
+  const oscillatingPriority = priorityRecommendations.some((change) =>
+    previousAudits.some((audit) =>
+      audit.dropId === change.dropId
+      && audit.from === change.to
+      && audit.to === change.from));
+  const missingLifecycleEvidence = priorityLifecycleAudits.some((audit) =>
+    !audit.evidence.some((item) => item.startsWith("goal-impact="))
+    || !audit.evidence.some((item) => item.startsWith("risk-delta=")));
+  const overrideNeeded = !report.pass
+    && (promotedToP0 > 2 || oscillatingPriority || missingLifecycleEvidence || repeatedRoute || bypassViolation);
 
   let overrideType: VerifyCycleRecord["overrideType"];
   let overrideReason: string | undefined;
@@ -158,7 +237,9 @@ export function buildVerifyCycle(input: {
     overrideType = "priority-lifecycle";
     overrideReason = promotedToP0 > 2
       ? "AI promoted more than 2 drops to p0 in one cycle"
-      : "More than 2 p0 drops in a failing verify cycle.";
+      : oscillatingPriority
+        ? "same drop changed priority back and forth across consecutive cycles"
+        : "priority change missing goal-impact or risk-delta evidence";
   }
 
   return {

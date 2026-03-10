@@ -11,7 +11,7 @@ import { hydrateRuntimeEngine } from "./server/bootstrap.js";
 import { resolveFromAppRoot } from "./runtime-paths.js";
 import { serveStatic } from "./server/static.js";
 
-const PORT = Number(process.env.PORT ?? 8787);
+const PORT = Number(process.env.PORT ?? 38888);
 const MAX_PORT_SEARCH = Number(process.env.PHONOWELL_PORT_SEARCH_LIMIT ?? 10);
 const DEBUG_API_ENABLED = process.env.PHONOWELL_ENABLE_DEBUG_API === "1";
 const WEB_ROOT = resolveFromAppRoot("webui");
@@ -55,9 +55,6 @@ const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", `http://localhost:${PORT}`);
     if (url.pathname.startsWith("/api/")) {
       const payload = await handleApi(req);
-      if (["POST", "PUT", "DELETE"].includes(req.method ?? "GET")) {
-        persistCurrentState();
-      }
       send(res, payload);
       return;
     }

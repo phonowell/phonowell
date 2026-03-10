@@ -2,8 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { PhonoWellEngine } from "../orchestrator/engine.js";
 import { listAcceptanceItems } from "../orchestrator/acceptance-traceability.js";
-import { runCoreGateScenario } from "../orchestrator/core-gate.js";
+import { evaluateCoreGate, runCoreGateScenario } from "../orchestrator/core-gate.js";
 import { buildFallbackStructured, parseStructuredOutput } from "../orchestrator/packet-structured.js";
+import { buildVerifyCycle, buildVerifyReport } from "../orchestrator/verification-service.js";
 
 process.env.PHONOWELL_DISABLE_CODEX_RUNTIME = "1";
 
@@ -11,6 +12,42 @@ function nonConversationState(state: ReturnType<PhonoWellEngine["getState"]>) {
   const clone = structuredClone(state);
   clone.assetConversations = [];
   return clone;
+}
+
+function makeReadyVerifyReport(engine: PhonoWellEngine, createdAt = new Date().toISOString()) {
+  const state = engine.getState();
+  const coveredDropId = state.well.originDropId ?? state.drops[0]?.dropId ?? "drop-ready";
+  const evidence = [{
+    kind: "drop" as const,
+    ref: coveredDropId,
+    detail: "ready acceptance evidence",
+    source: "manual-link" as const,
+  }];
+  return {
+    pass: true,
+    issues: [],
+    suggestions: [],
+    acceptanceCoverageDropIds: [coveredDropId],
+    acceptanceItems: [{
+      itemId: "accept-ready-item",
+      title: "Ready acceptance evidence",
+      source: "definition-of-done" as const,
+      status: "covered" as const,
+      coveredByDropIds: [coveredDropId],
+      evidence,
+      confidence: 0.96,
+    }],
+    changedDropCoverage: [{
+      dropId: coveredDropId,
+      acceptanceItemIds: ["accept-ready-item"],
+      evidence,
+    }],
+    uncoveredAcceptanceItemIds: [],
+    selfIterationEvidence: ["run-1:dry-run:pass", "run-2:generate:pass"],
+    changedDropIds: [coveredDropId],
+    rerunConsistent: true,
+    createdAt,
+  };
 }
 
 test("bootstrap creates goal origin without auto-running packet flow", () => {
@@ -69,6 +106,16 @@ test("fallback packets are explicitly marked when model execution fails", async 
   assert.equal(packet.response.outputSource, "fallback");
   assert.equal(packet.response.structured?.outputSource, "fallback");
   assert.ok(packet.response.structured?.provenanceNotes?.some((item) => item.includes("fallback")));
+});
+
+test("engine fallback runtime forces packet execution to stay offline", async () => {
+  const engine = new PhonoWellEngine({ forceFallbackRuntime: true });
+  engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
+
+  const packet = await engine.runPacketStage("analyze");
+  assert.equal(packet.response.usedFallback, true);
+  assert.ok(packet.response.evidence.some((item) => item === "forced-fallback=true"));
 });
 
 test("deep organize is the path that persists organize packets and proposals", async () => {
@@ -274,6 +321,7 @@ test("verify route is executed and priority lifecycle mutates state with audit r
   assert.notEqual(cycle.routeExecution?.route, undefined);
   assert.ok((cycle.priorityLifecycleAudits?.length ?? 0) >= 1);
   assert.ok(cycle.priorityLifecycleAudits?.some((audit) => audit.decision === "applied" || audit.overrideRequired));
+  assert.equal(after.pendingChangedDropIds.length >= 1, true);
 });
 
 test("acceptance coverage maps changed drops to acceptance items and evidence", async () => {
@@ -379,6 +427,233 @@ test("acceptance trace link can cover items without token overlap", async () => 
   assert.ok(covered?.evidence.some((item) => item.source === "manual-link"));
 });
 
+test("updating drop text preserves existing manual acceptance links", () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+
+  const drop = engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "Manual acceptance link",
+    summary: "Initial summary for manual acceptance mapping.",
+    preserveOrphan: false,
+  });
+  const itemId = listAcceptanceItems(engine.getState())[0]?.itemId;
+  assert.ok(itemId);
+  engine.bindDropToAcceptanceItems(drop.dropId, [itemId!], "preserve manual link");
+
+  engine.updateDrop(drop.dropId, {
+    summary: "Edited summary that should not wipe existing manual acceptance links.",
+  });
+
+  const updated = engine.getState().drops.find((item) => item.dropId === drop.dropId);
+  assert.ok(updated);
+  assert.ok(updated?.acceptanceTraceLinks?.some((link) => link.itemId === itemId && link.source === "manual-link"));
+});
+
+test("auto-flow repairs missing acceptance trace links on generated intent hypothesis", () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
+  engine.runAutoFlow("test.trace-repair.initial");
+
+  const firstState = engine.getState();
+  const hypothesis = firstState.drops.find((drop) => drop.type === "generated-intent-hypothesis");
+  assert.ok(hypothesis);
+  hypothesis!.acceptanceTraceLinks = [];
+  engine.replaceState(firstState);
+
+  engine.runAutoFlow("test.trace-repair.rerun");
+  const repaired = engine.getState().drops.find((drop) => drop.type === "generated-intent-hypothesis");
+  assert.ok(repaired);
+  assert.equal((repaired?.acceptanceTraceLinks?.length ?? 0) >= 4, true);
+  const acceptanceItems = listAcceptanceItems(engine.getState());
+  const acceptanceContractItemIds = new Set(
+    acceptanceItems.filter((item) => item.source === "acceptance-contract").map((item) => item.itemId),
+  );
+  assert.ok(repaired?.acceptanceTraceLinks?.some((link) => acceptanceContractItemIds.has(link.itemId)));
+});
+
+test("verify cycle does not request override for non-p0 lifecycle promotions", () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+
+  const noteA = engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "Trace gap A",
+    summary: "Needs trace evidence A.",
+    preserveOrphan: false,
+  });
+  const noteB = engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "Trace gap B",
+    summary: "Needs trace evidence B.",
+    preserveOrphan: false,
+  });
+  const noteC = engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "Trace gap C",
+    summary: "Needs trace evidence C.",
+    preserveOrphan: false,
+  });
+
+  const state = engine.getState();
+  const report = {
+    ...makeReadyVerifyReport(engine),
+    pass: false,
+    issues: ["acceptance evidence missing"],
+    uncoveredAcceptanceItemIds: ["accept-gap"],
+  };
+  const recommendations = [
+    { dropId: noteA.dropId, from: "p2" as const, to: "p1" as const, reason: "improve mid-path convergence" },
+    { dropId: noteB.dropId, from: "p2" as const, to: "p1" as const, reason: "improve mid-path convergence" },
+    { dropId: noteC.dropId, from: "p2" as const, to: "p1" as const, reason: "improve mid-path convergence" },
+  ];
+  const cycle = buildVerifyCycle({
+    state,
+    report,
+    priorityRecommendations: recommendations,
+    priorityLifecycleAudits: recommendations.map((item) => ({
+      ...item,
+      decision: "applied" as const,
+      overrideRequired: false,
+      evidence: [
+        "goal-impact=linked-to-origin",
+        "risk-delta=mid-path-convergence",
+      ],
+      createdAt: new Date().toISOString(),
+    })),
+    routeExecution: {
+      route: "analyze",
+      executed: true,
+      status: "pass",
+      actions: ["analyze", "organize"],
+      evidence: ["pending-changed=3"],
+      createdAt: new Date().toISOString(),
+    },
+  });
+
+  assert.equal(cycle.overrideNeeded, false);
+  assert.equal(cycle.overrideType, undefined);
+});
+
+test("core gate separates coverage evidence from self-iteration consistency", () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  const state = engine.getState();
+  const verify = {
+    ...makeReadyVerifyReport(engine),
+    rerunConsistent: false,
+  };
+  state.verifyReports.unshift(verify);
+  state.selfIterationRecords.unshift({
+    cycleId: "cycle-self-iteration",
+    changedDropIds: verify.changedDropIds,
+    acceptanceCoverageDropIds: verify.acceptanceCoverageDropIds,
+    rerunConsistent: false,
+    dryRunGate: "pass",
+    verifyPass: true,
+    stateHash: "h-old",
+    createdAt: new Date().toISOString(),
+  });
+  engine.replaceState(state);
+
+  const gate = evaluateCoreGate(engine.getState(), engine.getCatalog());
+  const coverage = gate.checks.find((item) => item.name === "acceptance-contract.coverage-evidence");
+  const selfIteration = gate.checks.find((item) => item.name === "acceptance-contract.self-iteration");
+
+  assert.equal(coverage?.status, "pass");
+  assert.equal(selfIteration?.status, "fail");
+});
+
+test("rerun consistency ignores previous records from a different changed-drop set", () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
+
+  const state = engine.getState();
+  state.selfIterationRecords.unshift({
+    cycleId: "cycle-previous",
+    changedDropIds: ["drop-other"],
+    acceptanceCoverageDropIds: [],
+    rerunConsistent: true,
+    dryRunGate: "pass",
+    verifyPass: false,
+    stateHash: "h-different",
+    createdAt: new Date().toISOString(),
+  });
+  state.pendingChangedDropIds = [state.well.originDropId!];
+  engine.replaceState(state);
+
+  const report = buildVerifyReport({
+    state: engine.getState(),
+    packetId: "packet-rerun-consistency",
+    dryRunReport: {
+      checkTotal: 9,
+      passCount: 9,
+      warnCount: 0,
+      failCount: 0,
+      criticalWarnCount: 0,
+      criticalFailCount: 0,
+      highConflictCount: 0,
+      missingRequiredCapabilityCount: 0,
+      acceptanceUnboundCount: 0,
+      acceptanceUncheckableCount: 0,
+      selfIterationEvidencePathMissingCount: 0,
+      assetUnclearCount: 0,
+      assetMissingPurposeCount: 0,
+      assetOrphanCount: 0,
+      designOverlapCount: 0,
+      designContradictionCount: 0,
+      designRedundancyCount: 0,
+      designErrorCount: 0,
+      designLowRoiCount: 0,
+      gateResult: "pass",
+      gateReason: "pass",
+      checks: [],
+      createdAt: new Date().toISOString(),
+    },
+    changedDropIds: [state.well.originDropId!],
+  });
+
+  assert.equal(report.rerunConsistent, true);
+});
+
+test("assistant loop does not regenerate when there are no pending changes", async () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  const state = engine.getState();
+  state.pendingChangedDropIds = [];
+  state.candidates.unshift({
+    candidateId: "candidate-stable",
+    wellId: state.well.id,
+    content: "stable candidate",
+    coverageDropIds: state.drops.map((drop) => drop.dropId),
+    createdAt: new Date().toISOString(),
+  });
+  state.verifyReports.unshift({
+    ...makeReadyVerifyReport(engine),
+    pass: false,
+    issues: ["acceptance evidence still needs review"],
+    acceptanceCoverageDropIds: [],
+    acceptanceItems: [],
+    changedDropCoverage: [],
+    uncoveredAcceptanceItemIds: ["accept-review"],
+  });
+  engine.replaceState(state);
+
+  const before = engine.getState();
+  const snapshot = await engine.runAssistantLoop({ trigger: "test.no-pending-short-circuit" });
+  const after = engine.getState();
+
+  assert.equal(snapshot.status, "blocked");
+  assert.equal(after.candidates.length, before.candidates.length);
+  assert.equal(after.verifyReports.length, before.verifyReports.length);
+});
+
 test("low-confidence automation decisions are deferred and do not write back state", () => {
   const engine = new PhonoWellEngine();
   engine.bootstrapInitialState();
@@ -431,6 +706,42 @@ test("assistant loop exposes automation review checkpoints in user-facing langua
   assert.equal(loop.primaryAction.key, "review-checkpoint");
   assert.equal(loop.reviewCheckpoints.some((item) => item.source === "automation"), true);
   assert.equal(loop.reviewCheckpoints.some((item) => /Review/.test(item.title)), true);
+});
+
+test("complete loop snapshot hides stale review checkpoints once acceptance is ready", () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
+
+  const drop = engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "Checkpoint candidate",
+    summary: "tiny",
+    preserveOrphan: false,
+  });
+  engine.schedulePostIngestAutomation(drop.dropId, "test.complete-hides-review");
+  engine.processPendingAutomationTasks();
+
+  const state = engine.getState();
+  state.pendingChangedDropIds = [];
+  state.candidates.unshift({
+    candidateId: "candidate-complete",
+    wellId: state.well.id,
+    content: "ready candidate",
+    coverageDropIds: state.drops.map((item) => item.dropId),
+    createdAt: new Date().toISOString(),
+  });
+  state.verifyReports.unshift(makeReadyVerifyReport(engine));
+  engine.replaceState(state);
+
+  const snapshot = engine.getMainLoopSnapshot();
+
+  assert.equal(snapshot.status, "complete");
+  assert.equal(snapshot.primaryAction.key, "accept-direction");
+  assert.equal(snapshot.openCheckpointCount, 0);
+  assert.deepEqual(snapshot.reviewCheckpoints, []);
+  assert.equal(snapshot.nextCheckpoint, undefined);
 });
 
 test("resolved automation checkpoint is removed from the assistant loop", () => {
@@ -486,19 +797,7 @@ test("accept current direction stores a durable acceptance decision", () => {
     coverageDropIds: state.drops.map((drop) => drop.dropId),
     createdAt: new Date().toISOString(),
   });
-  state.verifyReports.unshift({
-    pass: true,
-    issues: [],
-    suggestions: [],
-    acceptanceCoverageDropIds: [state.well.acceptanceDropId],
-    acceptanceItems: [],
-    changedDropCoverage: [],
-    uncoveredAcceptanceItemIds: [],
-    selfIterationEvidence: ["run-1:verify:pass"],
-    changedDropIds: [],
-    rerunConsistent: true,
-    createdAt: new Date().toISOString(),
-  });
+  state.verifyReports.unshift(makeReadyVerifyReport(engine));
   engine.replaceState(state);
 
   const ready = engine.getMainLoopSnapshot();
@@ -532,19 +831,7 @@ test("accepted direction is cleared after new changes", () => {
     coverageDropIds: state.drops.map((drop) => drop.dropId),
     createdAt: new Date().toISOString(),
   });
-  state.verifyReports.unshift({
-    pass: true,
-    issues: [],
-    suggestions: [],
-    acceptanceCoverageDropIds: [state.well.acceptanceDropId],
-    acceptanceItems: [],
-    changedDropCoverage: [],
-    uncoveredAcceptanceItemIds: [],
-    selfIterationEvidence: ["run-1:verify:pass"],
-    changedDropIds: [],
-    rerunConsistent: true,
-    createdAt: new Date().toISOString(),
-  });
+  state.verifyReports.unshift(makeReadyVerifyReport(engine));
   engine.replaceState(state);
   engine.acceptCurrentDirection("test.accepted");
 
@@ -609,6 +896,73 @@ test("accept current direction stays blocked when verify evidence is stale", () 
   assert.equal(loop.latestVerifyPass, undefined);
   assert.equal(loop.acceptanceStatus, "pending");
   assert.throws(() => engine.acceptCurrentDirection("test.stale-verify"), /not ready for acceptance/);
+});
+
+test("accept current direction requires complete acceptance evidence on the latest candidate", () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
+  engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "Acceptance material",
+    summary: "Enough material exists, but acceptance evidence is intentionally incomplete.",
+    preserveOrphan: false,
+  });
+  const state = engine.getState();
+  state.pendingChangedDropIds = [];
+  state.candidates.unshift({
+    candidateId: "candidate-incomplete-verify",
+    wellId: state.well.id,
+    content: "candidate with incomplete verify",
+    coverageDropIds: state.drops.map((drop) => drop.dropId),
+    createdAt: "2026-03-10T01:10:00.000Z",
+  });
+  state.verifyReports.unshift({
+    pass: true,
+    issues: [],
+    suggestions: [],
+    acceptanceCoverageDropIds: [state.well.acceptanceDropId],
+    acceptanceItems: [],
+    changedDropCoverage: [],
+    uncoveredAcceptanceItemIds: [],
+    selfIterationEvidence: ["run-1:dry-run:pass"],
+    changedDropIds: [],
+    rerunConsistent: true,
+    createdAt: "2026-03-10T01:11:00.000Z",
+  });
+  engine.replaceState(state);
+
+  const loop = engine.getMainLoopSnapshot();
+  assert.notEqual(loop.primaryAction.key, "accept-direction");
+  assert.equal(loop.latestResult?.label, "risk found");
+  assert.match(loop.latestResult?.summary ?? "", /acceptance|self-iteration/i);
+  assert.throws(() => engine.acceptCurrentDirection("test.incomplete-verify"), /not ready for acceptance/);
+});
+
+test("acceptance contract edits create an explicit re-evaluation checkpoint", () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
+  const state = engine.getState();
+  state.pendingChangedDropIds = [];
+  state.candidates.unshift({
+    candidateId: "candidate-recheck",
+    wellId: state.well.id,
+    content: "accepted candidate",
+    coverageDropIds: state.drops.map((drop) => drop.dropId),
+    createdAt: new Date().toISOString(),
+  });
+  state.verifyReports.unshift(makeReadyVerifyReport(engine));
+  engine.replaceState(state);
+
+  engine.updateDrop(engine.getState().well.acceptanceDropId, {
+    summary: "Updated acceptance contract with stricter evidence wording.",
+  });
+
+  const loop = engine.getMainLoopSnapshot();
+  assert.equal(loop.status, "blocked");
+  assert.equal(loop.reviewCheckpoints.some((item) => item.checkpointId === "checkpoint-acceptance-stale"), true);
 });
 
 test("invalid structured packet output is marked as fallback", () => {

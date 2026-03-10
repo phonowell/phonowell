@@ -1,8 +1,9 @@
 import { buildCoverageReport } from "./coverage.js";
-import { listAcceptanceItems } from "./acceptance-traceability.js";
 import type { DryRunReport, WellState } from "./types.js";
 import { PhonoWellEngine } from "./engine.js";
 import { getSchemaManifest, getSchemaValidationReport } from "./validator.js";
+import { runClosureScenario } from "./scenario-service.js";
+import { isVerifyReportReadyForAcceptance, listVerifyCoverageGaps } from "./verification-service.js";
 
 export interface CoreGateCheck {
   name: string;
@@ -32,6 +33,11 @@ export function evaluateCoreGate(state: WellState, catalog: ReturnType<PhonoWell
   const coverage = buildCoverageReport(catalog, state);
   const schemaValidation = getSchemaValidationReport(state, catalog);
   const checks: CoreGateCheck[] = [];
+  const latestVerify = state.verifyReports[0];
+  const latestVerifyCycle = state.verifyCycles[0];
+  const latestSelfIteration = state.selfIterationRecords[0];
+  const coverageReady = latestVerify ? listVerifyCoverageGaps(latestVerify).length === 0 : false;
+  const verifyReady = latestVerify ? isVerifyReportReadyForAcceptance(latestVerify) : false;
 
   checks.push(gate("core-foundation.one-well-one-artifact", state.well.artifactType ? "pass" : "fail", [
     `well-id=${state.well.id}`,
@@ -53,14 +59,17 @@ export function evaluateCoreGate(state: WellState, catalog: ReturnType<PhonoWell
     `acceptance-drop-id=${state.well.acceptanceDropId || "none"}`,
   ]));
 
-  const latestVerify = state.verifyReports[0];
-  checks.push(gate("acceptance-contract.coverage-evidence", latestVerify?.acceptanceCoverageDropIds?.length ? "pass" : "warn", [
+  checks.push(gate("acceptance-contract.coverage-evidence", coverageReady ? "pass" : "fail", [
+    `verify-present=${String(Boolean(latestVerify))}`,
+    `verify-pass=${String(latestVerify?.pass ?? false)}`,
     `coverage-count=${latestVerify?.acceptanceCoverageDropIds?.length ?? 0}`,
+    `uncovered-items=${latestVerify?.uncoveredAcceptanceItemIds?.length ?? 0}`,
   ]));
 
-  checks.push(gate("acceptance-contract.self-iteration", state.selfIterationRecords.length >= 1 ? "pass" : "warn", [
+  checks.push(gate("acceptance-contract.self-iteration", latestSelfIteration?.verifyPass === true && latestSelfIteration?.rerunConsistent === true ? "pass" : "fail", [
     `self-iteration-records=${state.selfIterationRecords.length}`,
-    `rerun-consistent=${state.selfIterationRecords[0]?.rerunConsistent ?? false}`,
+    `verify-pass=${latestSelfIteration?.verifyPass ?? false}`,
+    `rerun-consistent=${latestSelfIteration?.rerunConsistent ?? false}`,
   ]));
 
   const dry = state.well.dryRunReport ?? null;
@@ -79,9 +88,10 @@ export function evaluateCoreGate(state: WellState, catalog: ReturnType<PhonoWell
     ],
   ));
 
-  checks.push(gate("execution-protocol.main-loop", state.candidates.length > 0 ? "pass" : "warn", [
+  checks.push(gate("execution-protocol.main-loop", state.candidates.length > 0 && verifyReady && state.pendingChangedDropIds.length === 0 ? "pass" : "fail", [
     `candidate-count=${state.candidates.length}`,
     `verify-count=${state.verifyReports.length}`,
+    `pending-changed=${state.pendingChangedDropIds.length}`,
   ]));
 
   const schemaManifest = getSchemaManifest();
@@ -120,13 +130,16 @@ export function evaluateCoreGate(state: WellState, catalog: ReturnType<PhonoWell
     `proposal-status=${latestProposal?.status ?? "none"}`,
   ]));
 
-  checks.push(gate("execution-protocol.verify-routing", state.verifyCycles.length >= 1 ? "pass" : "warn", [
+  checks.push(gate("execution-protocol.verify-routing", latestVerifyCycle?.routeExecution?.executed && latestVerifyCycle.routeExecution.status === "pass" && !latestVerifyCycle.overrideNeeded ? "pass" : "fail", [
     `verify-cycles=${state.verifyCycles.length}`,
-    `latest-route=${state.verifyCycles[0]?.verifyRoute ?? "none"}`,
+    `latest-route=${latestVerifyCycle?.verifyRoute ?? "none"}`,
+    `route-status=${latestVerifyCycle?.routeExecution?.status ?? "none"}`,
+    `override-needed=${latestVerifyCycle?.overrideNeeded ?? false}`,
   ]));
 
-  checks.push(gate("execution-protocol.priority-lifecycle", state.verifyCycles[0]?.priorityRecommendations ? "pass" : "warn", [
-    `priority-change-count=${state.verifyCycles[0]?.priorityRecommendations?.length ?? 0}`,
+  checks.push(gate("execution-protocol.priority-lifecycle", latestVerifyCycle && !latestVerifyCycle.priorityLifecycleAudits?.some((audit) => audit.overrideRequired) ? "pass" : "fail", [
+    `priority-change-count=${latestVerifyCycle?.priorityRecommendations?.length ?? 0}`,
+    `override-required-count=${latestVerifyCycle?.priorityLifecycleAudits?.filter((audit) => audit.overrideRequired).length ?? 0}`,
   ]));
 
   checks.push(gate("coverage.active-assets", coverage.summary.missing === 0 ? "pass" : "fail", [
@@ -154,15 +167,6 @@ export function evaluateCoreGate(state: WellState, catalog: ReturnType<PhonoWell
 }
 
 export async function runCoreGateScenario(engine: PhonoWellEngine): Promise<CoreGateResult> {
-  engine.ensureGoalOriginDraft();
-  engine.updateGoalOrigin({ status: "confirmed" });
-  const goalId = engine.getState().well.originDropId;
-  const acceptanceItems = listAcceptanceItems(engine.getState());
-  if (goalId && acceptanceItems.length > 0) {
-    engine.bindDropToAcceptanceItems(goalId, [acceptanceItems[0].itemId], "core-gate scenario bind");
-  }
-  await engine.runDeepOrganize("core-gate.scenario");
-  await engine.runCycle();
-  engine.runDryRun();
+  await runClosureScenario(engine, "core-gate.scenario");
   return evaluateCoreGate(engine.getState(), engine.getCatalog());
 }

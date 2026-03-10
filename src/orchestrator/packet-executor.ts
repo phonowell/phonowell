@@ -1,5 +1,5 @@
 import { Codex, type ThreadEvent, type ThreadItem, type Usage } from "@openai/codex-sdk";
-import type { PacketContext, PacketStage, PacketStructuredOutput } from "./types.js";
+import type { PacketContext, PacketRunOptions, PacketStage, PacketStructuredOutput } from "./types.js";
 import { loadProviderSettings } from "./provider.js";
 import { buildPacketPrompt } from "./packet-prompt.js";
 import { outputSchemaFor } from "./packet-schema.js";
@@ -67,11 +67,15 @@ async function collectStreamedTurn(events: AsyncGenerator<ThreadEvent>): Promise
   };
 }
 
-export async function executePacket(stage: PacketStage, context: PacketContext): Promise<PacketExecutionResult> {
+export async function executePacket(
+  stage: PacketStage,
+  context: PacketContext,
+  options: PacketRunOptions = {},
+): Promise<PacketExecutionResult> {
   const settings = loadProviderSettings();
   const prompt = buildPacketPrompt(stage, context);
   const fallback = buildFallbackStructured(stage, context);
-  if (process.env.PHONOWELL_DISABLE_CODEX_RUNTIME === "1") {
+  if (options.forceFallback || process.env.PHONOWELL_DISABLE_CODEX_RUNTIME === "1") {
     const structured = enrichStructuredOutput(stage, context, fallback);
     return {
       outputText: JSON.stringify(structured),
@@ -79,7 +83,8 @@ export async function executePacket(stage: PacketStage, context: PacketContext):
       usedFallback: true,
       evidence: [
         "output-source=fallback",
-        "runtime-disabled-by-env=true",
+        `forced-fallback=${String(Boolean(options.forceFallback))}`,
+        `runtime-disabled-by-env=${String(process.env.PHONOWELL_DISABLE_CODEX_RUNTIME === "1")}`,
       ],
     };
   }

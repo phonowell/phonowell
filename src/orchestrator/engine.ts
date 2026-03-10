@@ -72,8 +72,11 @@ import {
   buildVerifyCycle,
   buildVerifyReport,
   evaluatePriorityLifecycle,
+  isVerifyReportReadyForAcceptance,
+  listVerifyAcceptanceGaps,
   pickVerifyRoute,
 } from "./verification-service.js";
+import { attachRunLogStateSummary } from "./run-log-state.js";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -134,9 +137,12 @@ export class PhonoWellEngine {
 
   private readonly state: WellState;
 
-  constructor() {
+  private readonly forceFallbackRuntime: boolean;
+
+  constructor(input: { forceFallbackRuntime?: boolean } = {}) {
     const createdAt = nowIso();
     this.catalog = loadAssetCatalog();
+    this.forceFallbackRuntime = input.forceFallbackRuntime === true;
 
     const well: Well = {
       id: "well-main",
@@ -640,11 +646,18 @@ export class PhonoWellEngine {
     recommendations: Array<{ dropId: string; from: Priority; to: Priority; reason: string }>,
   ): PriorityLifecycleAuditRecord[] {
     const audits: PriorityLifecycleAuditRecord[] = [];
+    const goalId = this.state.well.originDropId;
     for (const recommendation of recommendations) {
       const drop = this.state.drops.find((item) => item.dropId === recommendation.dropId);
       if (!drop) {
         continue;
       }
+      const hasGoalRelation = Boolean(goalId) && this.state.relations.some((relation) =>
+        (relation.fromDropId === goalId && relation.toDropId === drop.dropId)
+        || (relation.toDropId === goalId && relation.fromDropId === drop.dropId));
+      const riskDelta = recommendation.reason.includes("blocking unresolved fail items")
+        ? "blocking-unresolved-fail"
+        : "mid-path-convergence";
       const overrideRequired = recommendation.to === "p0" && this.state.well.dryRunReport?.gateResult === "fail";
       const decision: PriorityLifecycleAuditRecord["decision"] = overrideRequired ? "deferred" : "applied";
       if (decision === "applied") {
@@ -662,6 +675,8 @@ export class PhonoWellEngine {
         decision,
         overrideRequired,
         evidence: [
+          `goal-impact=${hasGoalRelation ? "linked-to-origin" : "indirect"}`,
+          `risk-delta=${riskDelta}`,
           `dry-run=${this.state.well.dryRunReport?.gateResult ?? "none"}`,
           `lifecycle=${drop.lifecycleState ?? "none"}`,
         ],
@@ -976,7 +991,9 @@ export class PhonoWellEngine {
   }
 
   async runPacketStage(stage: PacketStage, overrides: Partial<PacketContext> = {}): Promise<PacketRecord> {
-    const record = await runPacket(stage, this.buildPacketContext(overrides));
+    const record = await runPacket(stage, this.buildPacketContext(overrides), {
+      forceFallback: this.forceFallbackRuntime,
+    });
     this.state.packetRecords.unshift(record);
     this.state.packetRecords = this.state.packetRecords.slice(0, 30);
     const proposal = this.buildProposal(record);
@@ -1000,7 +1017,9 @@ export class PhonoWellEngine {
     stage: PacketStage,
     overrides: Partial<PacketContext> = {},
   ): Promise<{ packet: PacketRecord }> {
-    const packet = await runPacket(stage, this.buildPacketContext(overrides));
+    const packet = await runPacket(stage, this.buildPacketContext(overrides), {
+      forceFallback: this.forceFallbackRuntime,
+    });
     return {
       packet: structuredClone(packet),
     };
@@ -1139,13 +1158,16 @@ export class PhonoWellEngine {
     const latestVerify = this.getCurrentCandidateVerifyReport();
     const latestDryRun = this.state.well.dryRunReport;
     if (latestVerify) {
-      const trust = latestVerify.pass
+      const verifyReady = isVerifyReportReadyForAcceptance(latestVerify);
+      const trust = verifyReady
         ? "ready"
         : latestVerify.acceptanceItems.some((item) => item.evidence.length > 0)
           ? "evidence-attached"
           : "risk-found";
-      const summary = latestVerify.pass
+      const summary = verifyReady
         ? `Evidence is attached for ${latestVerify.changedDropCoverage.length} changed items.`
+        : latestVerify.pass
+          ? listVerifyAcceptanceGaps(latestVerify)[0] ?? "The current candidate is missing acceptance evidence."
         : latestVerify.issues[0] ?? "The current candidate still has review risks.";
       return {
         trust,
@@ -1284,6 +1306,34 @@ export class PhonoWellEngine {
     }
 
     const latestVerify = this.getCurrentCandidateVerifyReport();
+    const latestVerifyCycle = this.state.verifyCycles[0];
+    if (latestVerifyCycle?.overrideNeeded) {
+      checkpoints.push({
+        checkpointId: `checkpoint-override-${latestVerifyCycle.cycleId}`,
+        kind: "review",
+        title: "Review the required override",
+        summary: latestVerifyCycle.overrideReason ?? "The verify cycle requires an explicit user override.",
+        source: "verify",
+        nextAction: this.makeLoopAction("review-checkpoint"),
+        evidence: [
+          `override-type=${latestVerifyCycle.overrideType ?? "unknown"}`,
+          ...latestVerifyCycle.verifyRouteEvidence.slice(0, 2),
+        ],
+        createdAt: latestVerifyCycle.routeExecution?.createdAt ?? nowIso(),
+      });
+    }
+    if (this.state.pendingChangedDropIds.includes(this.state.well.acceptanceDropId)) {
+      checkpoints.push({
+        checkpointId: "checkpoint-acceptance-stale",
+        kind: "acceptance",
+        title: "Re-run acceptance review",
+        summary: "Acceptance criteria changed, so the current verification evidence is stale.",
+        source: "verify",
+        nextAction: this.makeLoopAction("continue-loop"),
+        evidence: [`acceptance-drop-id=${this.state.well.acceptanceDropId}`],
+        createdAt: nowIso(),
+      });
+    }
     if (latestVerify && !latestVerify.pass) {
       checkpoints.push({
         checkpointId: `checkpoint-verify-${latestVerify.createdAt}`,
@@ -1396,7 +1446,7 @@ export class PhonoWellEngine {
       statusLabel = "Accepted";
       summary = `You accepted the current direction on ${this.state.well.acceptedAt ?? "the latest review"}.`;
       primaryAction = this.makeLoopAction("continue-loop");
-    } else if (latestVerify?.pass && this.state.pendingChangedDropIds.length === 0) {
+    } else if (latestVerify && isVerifyReportReadyForAcceptance(latestVerify) && this.state.pendingChangedDropIds.length === 0) {
       status = "complete";
       userState = "ready";
       statusLabel = "Ready";
@@ -1428,6 +1478,8 @@ export class PhonoWellEngine {
       primaryAction = this.makeLoopAction("continue-loop");
     }
 
+    const visibleReviewCheckpoints = status === "complete" ? [] : reviewCheckpoints;
+
     return {
       status,
       userState,
@@ -1441,9 +1493,9 @@ export class PhonoWellEngine {
       acceptanceStatus: this.state.well.acceptanceStatus,
       acceptedCandidateId: this.state.well.acceptedCandidateId,
       acceptedAt: this.state.well.acceptedAt,
-      nextCheckpoint: reviewCheckpoints[0],
-      reviewCheckpoints,
-      openCheckpointCount: reviewCheckpoints.length,
+      nextCheckpoint: visibleReviewCheckpoints[0],
+      reviewCheckpoints: visibleReviewCheckpoints,
+      openCheckpointCount: visibleReviewCheckpoints.length,
       stageChain: ["asset", "proposal", "gate", "apply", "verify"],
       latestProposalId: latestProposal?.proposalId,
       latestProposalStatus: latestProposal?.status,
@@ -1524,6 +1576,17 @@ export class PhonoWellEngine {
           stage: "assistant-loop",
           status: "pass",
           summary: "assistant-loop.complete",
+          payload: snapshot as unknown as Record<string, unknown>,
+        });
+        return snapshot;
+      }
+
+      if (this.state.pendingChangedDropIds.length === 0 && (this.state.verifyReports.length > 0 || this.state.candidates.length > 0)) {
+        this.persistAssistantLoop(snapshot);
+        this.pushRunLog({
+          stage: "assistant-loop",
+          status: snapshot.status === "failed" ? "fail" : "warn",
+          summary: "assistant-loop.idle:no-pending-changes",
           payload: snapshot as unknown as Record<string, unknown>,
         });
         return snapshot;
@@ -1697,15 +1760,18 @@ export class PhonoWellEngine {
     if (proposal.gateStatus === "fail") {
       throw new Error(`verify blocked: proposal gate fail (${proposal.gateReasons.join("; ")})`);
     }
+    const verifiedChangedDropIds = [...this.state.pendingChangedDropIds];
     const verifyReport = buildVerifyReport({
       state: this.state,
       packetId: packet.packetId,
       dryRunReport: report,
+      changedDropIds: verifiedChangedDropIds,
     });
 
     this.state.verifyReports.unshift(verifyReport);
+    this.state.pendingChangedDropIds = [];
 
-    const priorityRecommendations = evaluatePriorityLifecycle(this.state);
+    const priorityRecommendations = verifyReport.pass ? [] : evaluatePriorityLifecycle(this.state);
     const priorityLifecycleAudits = this.applyPriorityLifecycleRecommendations(priorityRecommendations);
     const routeExecution = await this.executeVerifyRoute(
       pickVerifyRoute(verifyReport, report.gateResult, this.state.unresolvedQuestions.length),
@@ -1724,7 +1790,7 @@ export class PhonoWellEngine {
         stage: "verify",
         status: "warn",
         summary: `override-needed ${cycle.overrideType ?? "unknown"}`,
-        payload: cycle as unknown as Record<string, unknown>,
+        payload: attachRunLogStateSummary(cycle as unknown as Record<string, unknown>, this.state),
         createdAt: nowIso(),
       });
     }
@@ -1744,7 +1810,6 @@ export class PhonoWellEngine {
     });
     this.state.selfIterationRecords.unshift(selfIterationRecord);
     this.state.selfIterationRecords = this.state.selfIterationRecords.slice(0, 20);
-    this.state.pendingChangedDropIds = [];
     this.refreshAssistantLoop();
 
     return structuredClone(verifyReport);
@@ -1781,7 +1846,7 @@ export class PhonoWellEngine {
       stage: input.stage,
       status: input.status,
       summary: input.summary,
-      payload: input.payload,
+      payload: attachRunLogStateSummary(input.payload, this.state),
       createdAt: nowIso(),
     };
     this.state.runLogs.unshift(runLog);

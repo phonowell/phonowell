@@ -14,7 +14,7 @@ import type {
   WellState,
 } from "./types.js";
 import { autoAttachDrop, applyMicroLifecycle } from "./graph-service.js";
-import { inferTraceLinksFromText } from "./acceptance-traceability.js";
+import { refreshAcceptanceTraceLinks } from "./acceptance-traceability.js";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -142,8 +142,8 @@ export function ingestDrop(state: WellState, input: {
       y: Number.isFinite(input.y) ? Number(input.y) : Math.floor(Math.random() * 500 - 250),
     },
   };
-  drop.acceptanceTraceLinks = inferTraceLinksFromText(drop, state);
   state.drops.push(drop);
+  refreshAcceptanceTraceLinks(drop, state);
   if (!input.preserveOrphan) {
     autoAttachDrop(state, drop);
     applyMicroLifecycle(state);
@@ -166,7 +166,7 @@ export function updateDrop(state: WellState, dropId: string, input: Partial<Pick
     drop.content = input.summary;
   }
   if (typeof input.summary === "string" || typeof input.title === "string") {
-    drop.acceptanceTraceLinks = inferTraceLinksFromText(drop, state);
+    refreshAcceptanceTraceLinks(drop, state);
   }
   if (input.position && Number.isFinite(input.position.x) && Number.isFinite(input.position.y)) {
     drop.position = { x: Number(input.position.x), y: Number(input.position.y) };

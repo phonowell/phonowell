@@ -8,6 +8,7 @@ import { promisify } from "node:util";
 import { PassThrough } from "node:stream";
 import type { IncomingMessage } from "node:http";
 import { PhonoWellEngine } from "../orchestrator/engine.js";
+import { listAcceptanceItems } from "../orchestrator/acceptance-traceability.js";
 import { handleAssetRoutes } from "../server/api/routes/assets.js";
 import { handleReadRoutes } from "../server/api/routes/read.js";
 import { handleRuntimeRoutes } from "../server/api/routes/runtime.js";
@@ -45,10 +46,46 @@ function makeCtx(input: {
   return {
     req: makeReq(input.method, input.body),
     method: input.method,
-    url: new URL(`http://localhost:8787${input.path}`),
+    url: new URL(`http://localhost:38888${input.path}`),
     engine: input.engine,
     persistCurrentState: () => {},
     debugMode: input.debugMode ?? false,
+  };
+}
+
+function makeReadyVerifyReport(engine: PhonoWellEngine, createdAt = new Date().toISOString()) {
+  const state = engine.getState();
+  const coveredDropId = state.well.originDropId ?? state.drops[0]?.dropId ?? "drop-ready";
+  const evidence = [{
+    kind: "drop" as const,
+    ref: coveredDropId,
+    detail: "ready acceptance evidence",
+    source: "manual-link" as const,
+  }];
+  return {
+    pass: true,
+    issues: [],
+    suggestions: [],
+    acceptanceCoverageDropIds: [coveredDropId],
+    acceptanceItems: [{
+      itemId: "accept-ready-item",
+      title: "Ready acceptance evidence",
+      source: "definition-of-done" as const,
+      status: "covered" as const,
+      coveredByDropIds: [coveredDropId],
+      evidence,
+      confidence: 0.96,
+    }],
+    changedDropCoverage: [{
+      dropId: coveredDropId,
+      acceptanceItemIds: ["accept-ready-item"],
+      evidence,
+    }],
+    uncoveredAcceptanceItemIds: [],
+    selfIterationEvidence: ["run-1:dry-run:pass", "run-2:generate:pass"],
+    changedDropIds: [coveredDropId],
+    rerunConsistent: true,
+    createdAt,
   };
 }
 
@@ -179,19 +216,7 @@ test("accept-direction route persists an explicit acceptance decision", async ()
     coverageDropIds: state.drops.map((drop) => drop.dropId),
     createdAt: new Date().toISOString(),
   });
-  state.verifyReports.unshift({
-    pass: true,
-    issues: [],
-    suggestions: [],
-    acceptanceCoverageDropIds: [state.well.acceptanceDropId],
-    acceptanceItems: [],
-    changedDropCoverage: [],
-    uncoveredAcceptanceItemIds: [],
-    selfIterationEvidence: ["run-1:verify:pass"],
-    changedDropIds: [],
-    rerunConsistent: true,
-    createdAt: new Date().toISOString(),
-  });
+  state.verifyReports.unshift(makeReadyVerifyReport(engine));
   engine.replaceState(state);
 
   let persistCalls = 0;
@@ -216,6 +241,32 @@ test("accept-direction route persists an explicit acceptance decision", async ()
   assert.equal(payload.loop.statusLabel, "Accepted");
   assert.equal(engine.getState().well.acceptanceStatus, "accepted");
   assert.equal(engine.getState().well.acceptedCandidateId, "candidate-ready");
+});
+
+test("conversation route persists recorded messages", async () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  let persistCalls = 0;
+
+  const response = await handleRuntimeRoutes({
+    ...makeCtx({
+      engine,
+      method: "POST",
+      path: "/api/conversations",
+      body: { content: "Explain the next step" },
+    }),
+    persistCurrentState: () => {
+      persistCalls += 1;
+    },
+  });
+
+  assert.ok(response);
+  assert.equal(response.status, 200);
+  assert.equal(persistCalls, 1);
+  const payload = JSON.parse(response.body);
+  assert.equal(payload.userMessage.role, "user");
+  assert.equal(payload.systemMessage.role, "system");
+  assert.equal(engine.getState().assetConversations.length >= 2, true);
 });
 
 test("wish and goal routes persist state without mutating graph side effects", async () => {
@@ -277,6 +328,22 @@ test("core-gate offline command returns stable json", async () => {
   assert.equal(parsed.mode, "offline");
   assert.equal(parsed.runtimeDisabled, true);
   assert.ok(parsed.result);
+});
+
+test("core-gate offline command evaluates current state instead of auto-converging a scenario", async () => {
+  const workspaceRoot = mkdtempSync(join(tmpdir(), "phonowell-core-gate-"));
+  const { stdout } = await execFileAsync("pnpm", ["run", "core-gate:offline"], {
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      PHONOWELL_DISABLE_CODEX_RUNTIME: "1",
+      PHONOWELL_WORKSPACE_ROOT: workspaceRoot,
+    },
+  });
+  const parsed = JSON.parse(stdout.trim().split("\n").slice(-1)[0] ?? stdout.trim());
+  assert.equal(parsed.mode, "offline");
+  assert.notEqual(parsed.result.gateResult, "pass");
+  assert.equal(parsed.result.summary.failCount >= 1 || parsed.result.summary.warnCount >= 1, true);
 });
 
 test("coverage command reports stable implementation coverage", async () => {
@@ -420,6 +487,75 @@ test("runtime routes return 400 for malformed json bodies", async () => {
 
   assert.ok(response);
   assert.equal(response.status, 400);
+});
+
+test("manual runtime routes expose organize, dry-run, generate, and verify contracts", async () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "Manual stage material",
+    summary: "Support one loop with verify evidence and acceptance mapping.",
+    preserveOrphan: false,
+  });
+  engine.updateGoalOrigin({ status: "confirmed" });
+
+  const organize = await handleRuntimeRoutes(makeCtx({
+    engine,
+    method: "POST",
+    path: "/api/deep-organize",
+    body: { trigger: "test.manual.organize" },
+  }));
+  assert.ok(organize);
+  assert.equal(organize.status, 200);
+  assert.ok(JSON.parse(organize.body).analyzePacket.packetId);
+
+  const dryRun = await handleRuntimeRoutes(makeCtx({
+    engine,
+    method: "POST",
+    path: "/api/dry-run",
+  }));
+  assert.ok(dryRun);
+  assert.equal(dryRun.status, 200);
+  assert.equal(typeof JSON.parse(dryRun.body).report.gateResult, "string");
+
+  const state = engine.getState();
+  const goalId = state.well.originDropId!;
+  const firstItemId = listAcceptanceItems(state)[0]?.itemId;
+  assert.ok(firstItemId);
+  state.candidates.unshift({
+    candidateId: "candidate-route-test",
+    wellId: state.well.id,
+    content: "candidate route test",
+    coverageDropIds: state.drops.map((drop) => drop.dropId),
+    createdAt: new Date().toISOString(),
+  });
+  engine.replaceState(state);
+  await handleRuntimeRoutes(makeCtx({
+    engine,
+    method: "POST",
+    path: "/api/acceptance-links",
+    body: { dropId: goalId, itemIds: [firstItemId!], rationale: "route contract test" },
+  }));
+
+  const generate = await handleRuntimeRoutes(makeCtx({
+    engine,
+    method: "POST",
+    path: "/api/generate",
+  }));
+  assert.ok(generate);
+  assert.equal(generate.status, 200);
+  assert.ok(JSON.parse(generate.body).candidate.candidateId);
+
+  const verify = await handleRuntimeRoutes(makeCtx({
+    engine,
+    method: "POST",
+    path: "/api/verify",
+  }));
+  assert.ok(verify);
+  assert.equal(verify.status, 200);
+  assert.equal(typeof JSON.parse(verify.body).verify.pass, "boolean");
 });
 
 test("loop read route is read-only and exposes user-facing checkpoint data", async () => {

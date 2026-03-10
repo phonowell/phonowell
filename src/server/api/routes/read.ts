@@ -9,9 +9,9 @@ import type { WellState } from "../../../orchestrator/types.js";
 import type { ApiContext } from "../context.js";
 import { json } from "../http.js";
 
-function buildObservabilitySnapshot(ctx: ApiContext) {
+async function buildObservabilitySnapshot(ctx: ApiContext) {
   const state = ctx.engine.getState();
-  const coverage = buildCoverageScenarioReport();
+  const coverage = await buildCoverageScenarioReport();
   const contractManifest = loadAssetContractManifest();
   const visibleDrops = state.drops.filter((drop) => drop.lifecycleState !== "archived");
   const latestCandidate = state.candidates[0] ?? null;
@@ -121,7 +121,7 @@ export async function handleReadRoutes(ctx: ApiContext) {
     return json(getSchemaManifest());
   }
   if (method === "GET" && url.pathname === "/api/observability") {
-    return json(buildObservabilitySnapshot(ctx));
+    return json(await buildObservabilitySnapshot(ctx));
   }
   if (method === "GET" && url.pathname === "/api/loop") {
     return json({ loop: engine.getMainLoopSnapshot() });
@@ -130,7 +130,7 @@ export async function handleReadRoutes(ctx: ApiContext) {
     return json({ activeProject: getActiveProject(), projects: listProjects() });
   }
   if (method === "GET" && url.pathname === "/api/coverage") {
-    return json(buildCoverageScenarioReport());
+    return json(await buildCoverageScenarioReport());
   }
   if (method === "GET" && url.pathname === "/api/core-gate") {
     const result = evaluateCoreGate(engine.getState(), engine.getCatalog());

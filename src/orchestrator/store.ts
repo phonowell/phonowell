@@ -5,6 +5,7 @@ import { PhonoWellEngine } from "./engine.js";
 import type { ProjectState, ProjectSummary, WellState } from "./types.js";
 import { normalizeAndValidateState } from "./validator.js";
 import { resolveFromWorkspaceRoot } from "../runtime-paths.js";
+import { archiveRunLogs } from "./log-archive.js";
 
 function workdirRoot(): string {
   return resolveFromWorkspaceRoot(".phonowell");
@@ -63,6 +64,14 @@ function isProjectState(item: ProjectState | undefined): item is ProjectState {
 function writeJsonFile(file: string, value: unknown): void {
   ensureDir(resolve(file, ".."));
   writeFileSync(file, JSON.stringify(value, null, 2), "utf8");
+}
+
+function persistStateForProject(project: ProjectState, state: WellState): WellState {
+  state.project = project;
+  const normalized = normalizeAndValidateState(state);
+  writeJsonFile(stateFileForProject(project.slug), normalized);
+  archiveRunLogs(project, normalized);
+  return normalized;
 }
 
 function buildFreshProjectState(project: ProjectState): WellState {
@@ -151,7 +160,7 @@ export function createProject(name: string): ProjectState {
     updatedAt: createdAt,
   };
   ensureProjectWorkspace(project);
-  writeJsonFile(stateFileForProject(project.slug), buildFreshProjectState(project));
+  persistStateForProject(project, buildFreshProjectState(project));
   writeJsonFile(activeProjectFile(), project);
   return project;
 }
@@ -185,7 +194,7 @@ export function deleteProject(slug: string): { deleted: boolean; activeProject: 
   const next = remaining[0] ? switchProject(remaining[0].slug) : (() => {
     const created = defaultProject();
     ensureProjectWorkspace(created);
-    writeJsonFile(stateFileForProject(created.slug), buildFreshProjectState(created));
+    persistStateForProject(created, buildFreshProjectState(created));
     writeJsonFile(activeProjectFile(), created);
     return created;
   })();
@@ -205,7 +214,5 @@ export function loadPersistedState(): WellState | undefined {
 
 export function persistCurrentState(): void {
   const project = getActiveProject();
-  const state = engine.getState();
-  state.project = project;
-  writeJsonFile(stateFileForProject(project.slug), normalizeAndValidateState(state));
+  persistStateForProject(project, engine.getState());
 }
