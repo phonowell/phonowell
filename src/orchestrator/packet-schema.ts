@@ -4,7 +4,7 @@ export function outputSchemaFor(stage: PacketStage): Record<string, unknown> {
   return {
     type: "object",
     additionalProperties: false,
-    required: ["summary", "changedDropIds", "assetPatches", "relationPatches"],
+    required: ["summary", "changedDropIds", "assetPatches", "relationPatches", "domainPatches"],
     properties: {
       summary: { type: "string" },
       artifactContent: { type: "string" },
@@ -24,6 +24,7 @@ export function outputSchemaFor(stage: PacketStage): Record<string, unknown> {
             type: { type: "string" },
             title: { type: "string" },
             summary: { type: "string" },
+            content: { type: "string" },
             purpose: { type: "string" },
             domain: { type: "string" },
             scope: { type: "string" },
@@ -48,8 +49,22 @@ export function outputSchemaFor(stage: PacketStage): Record<string, unknown> {
           },
         },
       },
+      domainPatches: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["action", "domainId"],
+          properties: {
+            action: { type: "string", enum: ["update"] },
+            domainId: { type: "string" },
+            name: { type: "string" },
+            summary: { type: "string" },
+          },
+        },
+      },
     },
-    ...(stage === "generate" ? { required: ["summary", "artifactContent", "changedDropIds", "assetPatches", "relationPatches"] } : {}),
-    ...(stage === "verify" ? { required: ["summary", "issues", "suggestions", "changedDropIds", "acceptanceCoverageDropIds", "assetPatches", "relationPatches"] } : {}),
+    ...(stage === "generate" ? { required: ["summary", "artifactContent", "changedDropIds", "assetPatches", "relationPatches", "domainPatches"] } : {}),
+    ...(stage === "verify" ? { required: ["summary", "issues", "suggestions", "changedDropIds", "acceptanceCoverageDropIds", "assetPatches", "relationPatches", "domainPatches"] } : {}),
   };
 }

@@ -9,6 +9,8 @@
     "well",
     "drops",
     "relations",
+    "domainNodes",
+    "domainEdges",
     "candidates",
     "proposals",
     "verifyReports",
@@ -20,6 +22,8 @@
     "unresolvedQuestions",
     "assetConversations",
     "automationTasks",
+    "activityTimeline",
+    "generationHistory",
     "assistantLoop"
   ],
   "properties": {
@@ -70,6 +74,51 @@
     "schemaVersion": { "type": "string", "enum": ["1.0.0", "1.1.0"] },
     "drops": { "type": "array", "items": { "$ref": "https://phonowell.dev/schemas/drop.schema.json" } },
     "relations": { "type": "array", "items": { "$ref": "https://phonowell.dev/schemas/relation.schema.json" } },
+    "domainNodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["domainId", "wellId", "name", "summary", "kind", "status", "frozen", "assetDropIds", "position", "createdAt", "updatedAt"],
+        "properties": {
+          "domainId": { "type": "string" },
+          "wellId": { "type": "string" },
+          "name": { "type": "string" },
+          "summary": { "type": "string" },
+          "kind": { "type": "string", "enum": ["system", "workspace", "inbox"] },
+          "status": { "type": "string", "enum": ["stable", "new", "absorbing", "attention", "frozen"] },
+          "frozen": { "type": "boolean" },
+          "assetDropIds": { "type": "array", "items": { "type": "string" } },
+          "position": {
+            "type": "object",
+            "required": ["x", "y"],
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" }
+            }
+          },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" },
+          "lastActivityAt": { "type": "string" }
+        }
+      }
+    },
+    "domainEdges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["edgeId", "wellId", "fromDomainId", "toDomainId", "kind", "summary", "createdAt", "updatedAt"],
+        "properties": {
+          "edgeId": { "type": "string" },
+          "wellId": { "type": "string" },
+          "fromDomainId": { "type": "string" },
+          "toDomainId": { "type": "string" },
+          "kind": { "type": "string", "enum": ["structure", "causal", "supports"] },
+          "summary": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        }
+      }
+    },
     "candidates": { "type": "array", "items": { "$ref": "https://phonowell.dev/schemas/candidate.schema.json" } },
     "proposals": { "type": "array", "items": { "type": "object" } },
     "verifyReports": { "type": "array", "items": { "$ref": "https://phonowell.dev/schemas/verify-report.schema.json" } },
@@ -81,6 +130,38 @@
     "unresolvedQuestions": { "type": "array", "items": { "type": "string" } },
     "assetConversations": { "type": "array", "items": { "type": "object" } },
     "automationTasks": { "type": "array", "items": { "type": "object" } },
+    "activityTimeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["activityId", "actor", "kind", "summary", "relatedDomainIds", "relatedDropIds", "createdAt"],
+        "properties": {
+          "activityId": { "type": "string" },
+          "actor": { "type": "string", "enum": ["ai", "user", "system"] },
+          "kind": { "type": "string" },
+          "summary": { "type": "string" },
+          "detail": { "type": "string" },
+          "relatedDomainIds": { "type": "array", "items": { "type": "string" } },
+          "relatedDropIds": { "type": "array", "items": { "type": "string" } },
+          "createdAt": { "type": "string" },
+          "undoSummary": { "type": "string" }
+        }
+      }
+    },
+    "generationHistory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["recordId", "snapshot", "diff", "createdAt"],
+        "properties": {
+          "recordId": { "type": "string" },
+          "candidateId": { "type": "string" },
+          "snapshot": { "type": "object" },
+          "diff": { "type": "object" },
+          "createdAt": { "type": "string" }
+        }
+      }
+    },
     "assistantLoop": {
       "type": "object",
       "required": ["status", "userState", "statusLabel", "summary", "nextAction", "updatedAt"],

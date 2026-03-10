@@ -1,5 +1,8 @@
 export type Priority = "p0" | "p1" | "p2";
 export type SchemaVersion = "1.0.0" | "1.1.0";
+export type DomainNodeKind = "system" | "workspace" | "inbox";
+export type DomainNodeStatus = "stable" | "new" | "absorbing" | "attention" | "frozen";
+export type DomainEdgeKind = "structure" | "causal" | "supports";
 export type AssetOwner =
   | "product-core"
   | "orchestrator-core"
@@ -101,6 +104,9 @@ export interface Drop {
   wellId: string;
   type: AssetType;
   domain: AssetDomain;
+  domainId?: string;
+  clusterId?: string;
+  clusterLabel?: string;
   scope: AssetScope;
   source: AssetSource;
   owner: AssetOwner;
@@ -119,6 +125,7 @@ export interface Drop {
   goalStatus?: "draft" | "confirmed" | "revised";
   acceptanceTraceLinks?: AcceptanceTraceLink[];
   position?: { x: number; y: number };
+  frozenPlacement?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -129,6 +136,87 @@ export interface Relation {
   fromDropId: string;
   toDropId: string;
   relationType: RelationType;
+  createdAt: string;
+}
+
+export interface DomainNode {
+  domainId: string;
+  wellId: string;
+  name: string;
+  summary: string;
+  kind: DomainNodeKind;
+  status: DomainNodeStatus;
+  frozen: boolean;
+  assetDropIds: string[];
+  position: { x: number; y: number };
+  createdAt: string;
+  updatedAt: string;
+  lastActivityAt?: string;
+}
+
+export interface DomainEdge {
+  edgeId: string;
+  wellId: string;
+  fromDomainId: string;
+  toDomainId: string;
+  kind: DomainEdgeKind;
+  summary: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ActivityTimelineEvent {
+  activityId: string;
+  actor: "ai" | "user" | "system";
+  kind:
+    | "ingest"
+    | "organize"
+    | "domain-created"
+    | "domain-updated"
+    | "domain-edge-updated"
+    | "correction"
+    | "generate"
+    | "verify"
+    | "policy-detected"
+    | "policy-applied";
+  summary: string;
+  detail?: string;
+  relatedDomainIds: string[];
+  relatedDropIds: string[];
+  createdAt: string;
+  undoSummary?: string;
+}
+
+export interface RequirementSnapshot {
+  snapshotId: string;
+  wish: string;
+  goalSummary?: string;
+  definitionOfDone: string[];
+  constraints: string[];
+  domainSignatures: string[];
+  inboxDropIds: string[];
+  createdAt: string;
+}
+
+export interface RequirementDiffEntry {
+  key: string;
+  status: "added" | "removed" | "changed";
+  before?: string;
+  after?: string;
+}
+
+export interface RequirementDiffSnapshot {
+  baselineSnapshotId?: string;
+  entries: RequirementDiffEntry[];
+  summary: string;
+  createdAt: string;
+}
+
+export interface GenerationRunRecord {
+  recordId: string;
+  candidateId?: string;
+  snapshot: RequirementSnapshot;
+  diff: RequirementDiffSnapshot;
   createdAt: string;
 }
 
@@ -322,6 +410,19 @@ export interface SelfIterationRecord {
   createdAt: string;
 }
 
+export interface WorkspacePolicy {
+  policyId: string;
+  sourceDropId: string;
+  title: string;
+  summary: string;
+  instruction: string;
+  scopeHint: "workspace" | "assets" | "text" | "visual";
+  confidence: number;
+  detectionMode: "declared" | "heuristic";
+  rationale: string[];
+  activatedAt: string;
+}
+
 export interface PacketContext {
   projectId: string;
   projectName: string;
@@ -336,12 +437,22 @@ export interface PacketContext {
   unresolvedQuestions: string[];
   activeDropIds: string[];
   activeDropSummaries?: Array<{ dropId: string; type: AssetType; title: string; summary: string; priority: Priority; layer: AssetLayer }>;
+  activeDomains?: Array<{
+    domainId: string;
+    name: string;
+    summary: string;
+    kind: DomainNodeKind;
+    assetCount: number;
+    frozen: boolean;
+  }>;
+  workspacePolicies?: WorkspacePolicy[];
   latestCandidateId?: string;
   latestCandidateSummary?: string;
   latestPacketSummary?: string;
   generationDiff?: GenerationDiff;
   conversationPrompt?: string;
   conversationTargetDropId?: string;
+  policyExecutionHint?: string;
 }
 
 export interface AutomationDecision {
@@ -394,6 +505,7 @@ export interface PacketAssetPatch {
   type?: AssetType;
   title: string;
   summary: string;
+  content?: string;
   purpose?: string;
   domain?: AssetDomain;
   scope?: AssetScope;
@@ -410,6 +522,13 @@ export interface PacketRelationPatch {
   relationType: RelationType;
 }
 
+export interface PacketDomainPatch {
+  action: "update";
+  domainId: string;
+  name?: string;
+  summary?: string;
+}
+
 export interface PacketStructuredOutput {
   summary: string;
   artifactContent?: string;
@@ -419,6 +538,7 @@ export interface PacketStructuredOutput {
   acceptanceCoverageDropIds?: string[];
   assetPatches?: PacketAssetPatch[];
   relationPatches?: PacketRelationPatch[];
+  domainPatches?: PacketDomainPatch[];
   outputSource?: PacketOutputSource;
   provenanceNotes?: string[];
 }
@@ -430,9 +550,10 @@ export interface ChangeProposal {
   summary: string;
   qualityScore: number;
   priority: "critical" | "high" | "medium" | "low";
-  category: "asset-change" | "relation-change" | "verification-remediation" | "artifact-update" | "mixed";
+  category: "asset-change" | "relation-change" | "domain-change" | "verification-remediation" | "artifact-update" | "mixed";
   assetPatches: PacketAssetPatch[];
   relationPatches: PacketRelationPatch[];
+  domainPatches: PacketDomainPatch[];
   issues: string[];
   suggestions: string[];
   changedDropIds: string[];
@@ -585,6 +706,8 @@ export interface WellState {
   well: Well;
   drops: Drop[];
   relations: Relation[];
+  domainNodes: DomainNode[];
+  domainEdges: DomainEdge[];
   candidates: CandidateArtifact[];
   proposals: ChangeProposal[];
   verifyReports: VerifyReport[];
@@ -596,6 +719,8 @@ export interface WellState {
   unresolvedQuestions: string[];
   assetConversations: ConversationMessage[];
   automationTasks: AutomationTaskRecord[];
+  activityTimeline: ActivityTimelineEvent[];
+  generationHistory: GenerationRunRecord[];
   assistantLoop: AssistantLoopState;
 }
 

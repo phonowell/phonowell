@@ -8,7 +8,9 @@ function nowIso(): string {
 export function assessProposalGate(packet: PacketRecord): Pick<ChangeProposal, "gateStatus" | "gateReasons"> {
   const structured = packet.response.structured;
   const reasons: string[] = [];
-  const patchCount = (structured?.assetPatches?.length ?? 0) + (structured?.relationPatches?.length ?? 0);
+  const patchCount = (structured?.assetPatches?.length ?? 0)
+    + (structured?.relationPatches?.length ?? 0)
+    + (structured?.domainPatches?.length ?? 0);
   const changedCount = structured?.changedDropIds?.length ?? 0;
   const hasArtifactContent = Boolean(structured?.artifactContent?.trim());
   const hasVerifyEvidence = Boolean((structured?.issues?.length ?? 0) || (structured?.suggestions?.length ?? 0) || (structured?.acceptanceCoverageDropIds?.length ?? 0));
@@ -42,12 +44,14 @@ export function buildProposalFromPacket(packet: PacketRecord): ChangeProposal | 
   }
   const assetPatchCount = structured.assetPatches?.length ?? 0;
   const relationPatchCount = structured.relationPatches?.length ?? 0;
+  const domainPatchCount = structured.domainPatches?.length ?? 0;
   const issueCount = structured.issues?.length ?? 0;
   const suggestionCount = structured.suggestions?.length ?? 0;
   const baseScore = Math.min(
     100,
     (assetPatchCount * 20)
     + (relationPatchCount * 12)
+    + (domainPatchCount * 14)
     + (issueCount * 10)
     + (suggestionCount * 6)
     + (structured.artifactContent ? 18 : 0)
@@ -55,12 +59,14 @@ export function buildProposalFromPacket(packet: PacketRecord): ChangeProposal | 
   );
   const qualityScore = Math.max(20, baseScore);
   const category: ChangeProposal["category"] =
-    assetPatchCount > 0 && relationPatchCount > 0
+    assetPatchCount + relationPatchCount + domainPatchCount > 1
       ? "mixed"
       : assetPatchCount > 0
         ? "asset-change"
         : relationPatchCount > 0
           ? "relation-change"
+          : domainPatchCount > 0
+            ? "domain-change"
           : structured.artifactContent
             ? "artifact-update"
             : "verification-remediation";
@@ -80,6 +86,7 @@ export function buildProposalFromPacket(packet: PacketRecord): ChangeProposal | 
     category,
     assetPatches: structured.assetPatches ?? [],
     relationPatches: structured.relationPatches ?? [],
+    domainPatches: structured.domainPatches ?? [],
     issues: structured.issues ?? [],
     suggestions: structured.suggestions ?? [],
     changedDropIds: structured.changedDropIds ?? [],

@@ -1,4 +1,5 @@
 import type {
+  ActivityTimelineEvent,
   AssetDomain,
   AssetLayer,
   AssetOwner,
@@ -6,6 +7,8 @@ import type {
   AssetSource,
   AssetType,
   CatalogAsset,
+  DomainEdge,
+  DomainNode,
   Priority,
   RelationType,
   SchemaValidationIssue,
@@ -31,6 +34,7 @@ export {
   validateProjectCreateInput,
   validateQuestionsInput,
   validateRelationInput,
+  validateUpdateDomainInput,
   validateUpdateDropInput,
   validateWishInput,
 } from "./input-validator.js";
@@ -142,6 +146,18 @@ function validateDropEntity(drop: Record<string, unknown>): void {
     ensure(typeof position.x === "number" && Number.isFinite(position.x), `drop.position.x invalid: ${String(drop.dropId ?? "unknown")}`);
     ensure(typeof position.y === "number" && Number.isFinite(position.y), `drop.position.y invalid: ${String(drop.dropId ?? "unknown")}`);
   }
+  if (drop.domainId !== undefined) {
+    ensure(typeof drop.domainId === "string" && drop.domainId.trim().length > 0, `drop.domainId invalid: ${String(drop.dropId ?? "unknown")}`);
+  }
+  if (drop.clusterId !== undefined) {
+    ensure(typeof drop.clusterId === "string" && drop.clusterId.trim().length > 0, `drop.clusterId invalid: ${String(drop.dropId ?? "unknown")}`);
+  }
+  if (drop.clusterLabel !== undefined) {
+    ensure(typeof drop.clusterLabel === "string" && drop.clusterLabel.trim().length > 0, `drop.clusterLabel invalid: ${String(drop.dropId ?? "unknown")}`);
+  }
+  if (drop.frozenPlacement !== undefined) {
+    ensure(typeof drop.frozenPlacement === "boolean", `drop.frozenPlacement invalid: ${String(drop.dropId ?? "unknown")}`);
+  }
 }
 
 function validateRelationEntity(relation: Record<string, unknown>): void {
@@ -151,6 +167,54 @@ function validateRelationEntity(relation: Record<string, unknown>): void {
   ensureString(relation.toDropId, "relation.toDropId");
   ensure(RELATION_TYPES.has(relation.relationType as RelationType), `relation has invalid type: ${String(relation.relationId ?? "unknown")}`);
   ensureString(relation.createdAt, `relation.createdAt:${String(relation.relationId ?? "unknown")}`);
+}
+
+function validateDomainNodeEntity(node: Record<string, unknown>): void {
+  ensureString(node.domainId, "domainNode.domainId");
+  ensureString(node.wellId, "domainNode.wellId");
+  ensureString(node.name, "domainNode.name");
+  ensureString(node.summary, "domainNode.summary");
+  ensure(
+    node.kind === "system" || node.kind === "workspace" || node.kind === "inbox",
+    `domainNode.kind invalid: ${String(node.domainId ?? "unknown")}`,
+  );
+  ensure(
+    node.status === "stable"
+      || node.status === "new"
+      || node.status === "absorbing"
+      || node.status === "attention"
+      || node.status === "frozen",
+    `domainNode.status invalid: ${String(node.domainId ?? "unknown")}`,
+  );
+  ensure(typeof node.frozen === "boolean", `domainNode.frozen invalid: ${String(node.domainId ?? "unknown")}`);
+  ensureStringArray(node.assetDropIds, `domainNode.assetDropIds:${String(node.domainId ?? "unknown")}`);
+  ensure(isObject(node.position), `domainNode.position invalid: ${String(node.domainId ?? "unknown")}`);
+  const position = node.position as Record<string, unknown>;
+  ensure(typeof position.x === "number" && Number.isFinite(position.x), `domainNode.position.x invalid: ${String(node.domainId ?? "unknown")}`);
+  ensure(typeof position.y === "number" && Number.isFinite(position.y), `domainNode.position.y invalid: ${String(node.domainId ?? "unknown")}`);
+  ensureString(node.createdAt, `domainNode.createdAt:${String(node.domainId ?? "unknown")}`);
+  ensureString(node.updatedAt, `domainNode.updatedAt:${String(node.domainId ?? "unknown")}`);
+}
+
+function validateDomainEdgeEntity(edge: Record<string, unknown>): void {
+  ensureString(edge.edgeId, "domainEdge.edgeId");
+  ensureString(edge.wellId, "domainEdge.wellId");
+  ensureString(edge.fromDomainId, "domainEdge.fromDomainId");
+  ensureString(edge.toDomainId, "domainEdge.toDomainId");
+  ensure(edge.kind === "structure" || edge.kind === "causal" || edge.kind === "supports", `domainEdge.kind invalid: ${String(edge.edgeId ?? "unknown")}`);
+  ensureString(edge.summary, `domainEdge.summary:${String(edge.edgeId ?? "unknown")}`);
+  ensureString(edge.createdAt, `domainEdge.createdAt:${String(edge.edgeId ?? "unknown")}`);
+  ensureString(edge.updatedAt, `domainEdge.updatedAt:${String(edge.edgeId ?? "unknown")}`);
+}
+
+function validateActivityTimelineEntity(event: Record<string, unknown>): void {
+  ensureString(event.activityId, "activity.activityId");
+  ensure(event.actor === "ai" || event.actor === "user" || event.actor === "system", `activity.actor invalid: ${String(event.activityId ?? "unknown")}`);
+  ensureString(event.kind, `activity.kind:${String(event.activityId ?? "unknown")}`);
+  ensureString(event.summary, `activity.summary:${String(event.activityId ?? "unknown")}`);
+  ensureStringArray(event.relatedDomainIds, `activity.relatedDomainIds:${String(event.activityId ?? "unknown")}`);
+  ensureStringArray(event.relatedDropIds, `activity.relatedDropIds:${String(event.activityId ?? "unknown")}`);
+  ensureString(event.createdAt, `activity.createdAt:${String(event.activityId ?? "unknown")}`);
 }
 
 function validateCandidateEntity(candidate: Record<string, unknown>): void {
@@ -192,6 +256,9 @@ function validatePacketRecordEntity(packet: Record<string, unknown>): void {
     }
     if (structured.suggestions !== undefined) {
       ensureStringArray(structured.suggestions, `packet.response.structured.suggestions:${String(packet.packetId ?? "unknown")}`);
+    }
+    if (structured.domainPatches !== undefined) {
+      ensure(Array.isArray(structured.domainPatches), `packet.response.structured.domainPatches:${String(packet.packetId ?? "unknown")}`);
     }
     if (structured.outputSource !== undefined) {
       ensure(structured.outputSource === "model" || structured.outputSource === "fallback", `packet.response.structured.outputSource invalid:${String(packet.packetId ?? "unknown")}`);
@@ -238,6 +305,12 @@ export function normalizeAndValidateState(state: WellState): WellState {
   if (!Array.isArray(mutableState.proposals)) {
     mutableState.proposals = [];
   }
+  if (!Array.isArray(mutableState.domainNodes)) {
+    mutableState.domainNodes = [];
+  }
+  if (!Array.isArray(mutableState.domainEdges)) {
+    mutableState.domainEdges = [];
+  }
   if (!Array.isArray(mutableState.verifyReports)) {
     mutableState.verifyReports = [];
   }
@@ -265,6 +338,12 @@ export function normalizeAndValidateState(state: WellState): WellState {
   if (!Array.isArray(mutableState.automationTasks)) {
     mutableState.automationTasks = [];
   }
+  if (!Array.isArray(mutableState.activityTimeline)) {
+    mutableState.activityTimeline = [];
+  }
+  if (!Array.isArray(mutableState.generationHistory)) {
+    mutableState.generationHistory = [];
+  }
   if (!isObject(mutableState.assistantLoop)) {
     mutableState.assistantLoop = {
       status: "idle",
@@ -287,6 +366,8 @@ export function normalizeAndValidateState(state: WellState): WellState {
   }
   ensure(Array.isArray(state.drops), "state missing drops");
   ensure(Array.isArray(state.relations), "state missing relations");
+  ensure(Array.isArray(state.domainNodes), "state missing domainNodes");
+  ensure(Array.isArray(state.domainEdges), "state missing domainEdges");
   ensure(Array.isArray(state.candidates), "state missing candidates");
   ensure(Array.isArray(state.proposals), "state missing proposals");
   ensure(Array.isArray(state.verifyReports), "state missing verifyReports");
@@ -298,6 +379,8 @@ export function normalizeAndValidateState(state: WellState): WellState {
   ensure(Array.isArray(state.unresolvedQuestions), "state missing unresolvedQuestions");
   ensure(Array.isArray(state.assetConversations), "state missing assetConversations");
   ensure(Array.isArray(state.automationTasks), "state missing automationTasks");
+  ensure(Array.isArray(state.activityTimeline), "state missing activityTimeline");
+  ensure(Array.isArray(state.generationHistory), "state missing generationHistory");
   ensure(isObject(state.assistantLoop), "state missing assistantLoop");
 
   for (const drop of state.drops) {
@@ -333,6 +416,15 @@ export function normalizeAndValidateState(state: WellState): WellState {
     }
     validateRelationEntity(mutable);
   }
+  for (const node of state.domainNodes) {
+    validateDomainNodeEntity(node as unknown as Record<string, unknown>);
+  }
+  for (const edge of state.domainEdges) {
+    validateDomainEdgeEntity(edge as unknown as Record<string, unknown>);
+  }
+  for (const event of state.activityTimeline) {
+    validateActivityTimelineEntity(event as unknown as Record<string, unknown>);
+  }
 
   for (const candidate of state.candidates) {
     validateCandidateEntity(candidate as unknown as Record<string, unknown>);
@@ -348,6 +440,15 @@ export function normalizeAndValidateState(state: WellState): WellState {
         const structured = response.structured as Record<string, unknown>;
         if (structured.outputSource !== "model" && structured.outputSource !== "fallback") {
           structured.outputSource = response.outputSource;
+        }
+        if (!Array.isArray(structured.assetPatches)) {
+          structured.assetPatches = [];
+        }
+        if (!Array.isArray(structured.relationPatches)) {
+          structured.relationPatches = [];
+        }
+        if (!Array.isArray(structured.domainPatches)) {
+          structured.domainPatches = [];
         }
         if (!Array.isArray(structured.provenanceNotes)) {
           structured.provenanceNotes = [];
@@ -367,6 +468,9 @@ export function normalizeAndValidateState(state: WellState): WellState {
     }
     if (!Array.isArray(mutable.relationPatches)) {
       mutable.relationPatches = [];
+    }
+    if (!Array.isArray(mutable.domainPatches)) {
+      mutable.domainPatches = [];
     }
     if (!Array.isArray(mutable.issues)) {
       mutable.issues = [];
@@ -398,6 +502,7 @@ export function normalizeAndValidateState(state: WellState): WellState {
     if (
       mutable.category !== "asset-change"
       && mutable.category !== "relation-change"
+      && mutable.category !== "domain-change"
       && mutable.category !== "verification-remediation"
       && mutable.category !== "artifact-update"
       && mutable.category !== "mixed"
@@ -408,6 +513,13 @@ export function normalizeAndValidateState(state: WellState): WellState {
     ensureString(mutable.sourcePacketId, "proposal.sourcePacketId");
     ensureString(mutable.summary, "proposal.summary");
     ensureString(mutable.createdAt, "proposal.createdAt");
+  }
+  for (const record of state.generationHistory) {
+    const mutable = record as unknown as Record<string, unknown>;
+    ensureString(mutable.recordId, "generationHistory.recordId");
+    ensure(isObject(mutable.snapshot), "generationHistory.snapshot invalid");
+    ensure(isObject(mutable.diff), "generationHistory.diff invalid");
+    ensureString(mutable.createdAt, "generationHistory.createdAt");
   }
   ensureStringArray(state.pendingChangedDropIds, "state.pendingChangedDropIds");
   ensureStringArray(state.unresolvedQuestions, "state.unresolvedQuestions");

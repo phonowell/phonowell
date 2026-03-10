@@ -7,6 +7,7 @@ import type {
   Drop,
   MicroLifecycleSummary,
   PacketAssetPatch,
+  PacketDomainPatch,
   PacketRelationPatch,
   Priority,
   Relation,
@@ -55,7 +56,7 @@ function createGeneratedDrop(state: WellState, patch: PacketAssetPatch): Drop {
     title: patch.title,
     summary: patch.summary,
     purpose: patch.purpose ?? "AI-generated change candidate.",
-    content: patch.purpose ?? patch.summary,
+    content: patch.content ?? patch.purpose ?? patch.summary,
     priority: patch.priority ?? "p2",
     confidence: 0.78,
     licenseState: "known",
@@ -64,6 +65,22 @@ function createGeneratedDrop(state: WellState, patch: PacketAssetPatch): Drop {
     createdAt,
     updatedAt: createdAt,
   };
+}
+
+function applyDomainPatch(state: WellState, patch: PacketDomainPatch): boolean {
+  const domain = state.domainNodes.find((item) => item.domainId === patch.domainId);
+  if (!domain) {
+    return false;
+  }
+  const nextName = typeof patch.name === "string" && patch.name.trim() ? patch.name.trim() : domain.name;
+  const nextSummary = typeof patch.summary === "string" && patch.summary.trim() ? patch.summary.trim() : domain.summary;
+  if (nextName === domain.name && nextSummary === domain.summary) {
+    return false;
+  }
+  domain.name = nextName;
+  domain.summary = nextSummary;
+  domain.updatedAt = nowIso();
+  return true;
 }
 
 export function autoAttachDrop(state: WellState, drop: Drop): void {
@@ -142,11 +159,13 @@ export function applyProposalToState(input: {
 }): {
   appliedAssetPatchCount: number;
   appliedRelationPatchCount: number;
+  appliedDomainPatchCount: number;
   changedDropIds: string[];
 } {
   const { state, proposal, markChanged, removeRelation } = input;
   let appliedAssetPatchCount = 0;
   let appliedRelationPatchCount = 0;
+  let appliedDomainPatchCount = 0;
   const changedDropIds = new Set<string>();
 
   for (const patch of proposal.assetPatches ?? []) {
@@ -167,6 +186,7 @@ export function applyProposalToState(input: {
       if (existing) {
         existing.title = patch.title || existing.title;
         existing.summary = patch.summary || existing.summary;
+        existing.content = patch.content ?? existing.content;
         existing.purpose = patch.purpose ?? existing.purpose;
         existing.parentDropId = patch.parentDropId ?? existing.parentDropId;
         existing.updatedAt = nowIso();
@@ -186,6 +206,15 @@ export function applyProposalToState(input: {
       markChanged(next.dropId);
       changedDropIds.add(next.dropId);
       appliedAssetPatchCount += 1;
+    }
+  }
+
+  for (const patch of proposal.domainPatches ?? []) {
+    if (patch.action !== "update") {
+      continue;
+    }
+    if (applyDomainPatch(state, patch)) {
+      appliedDomainPatchCount += 1;
     }
   }
 
@@ -212,6 +241,7 @@ export function applyProposalToState(input: {
   return {
     appliedAssetPatchCount,
     appliedRelationPatchCount,
+    appliedDomainPatchCount,
     changedDropIds: [...changedDropIds],
   };
 }

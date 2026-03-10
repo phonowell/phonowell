@@ -3,6 +3,7 @@ import {
   validateCreateDropInput,
   validateQuestionsInput,
   validateRelationInput,
+  validateUpdateDomainInput,
   validateUpdateDropInput,
 } from "../../../orchestrator/validator.js";
 import type { ApiContext } from "../context.js";
@@ -94,11 +95,42 @@ export async function handleAssetRoutes(ctx: ApiContext) {
       const drop = engine.updateDrop(dropId, {
         ...(typeof body.title === "string" ? { title: body.title } : {}),
         ...(typeof body.summary === "string" ? { summary: body.summary } : {}),
+        ...(typeof body.domainId === "string" ? { domainId: body.domainId } : {}),
+        ...(typeof body.clusterId === "string" ? { clusterId: body.clusterId } : {}),
+        ...(typeof body.clusterLabel === "string" ? { clusterLabel: body.clusterLabel } : {}),
+        ...(typeof body.frozenPlacement === "boolean" ? { frozenPlacement: body.frozenPlacement } : {}),
         ...(body.position ? { position: body.position } : {}),
-        skipAutoFlow: body.skipAutoFlow ?? Boolean(body.position),
+        skipAutoFlow: body.skipAutoFlow ?? Boolean(
+          body.position
+          || body.domainId
+          || body.clusterId
+          || body.clusterLabel
+          || typeof body.frozenPlacement === "boolean",
+        ),
       });
       persistCurrentState();
       return json({ drop, report: null });
+    } catch (error) {
+      return badRequest(error);
+    }
+  }
+
+  if (method === "PUT" && url.pathname.startsWith("/api/domains/")) {
+    const domainId = url.pathname.replace("/api/domains/", "");
+    let body: ReturnType<typeof validateUpdateDomainInput>;
+    try {
+      body = validateUpdateDomainInput(await parseBody(ctx.req));
+    } catch (error) {
+      return badRequest(error);
+    }
+    try {
+      const domain = engine.updateDomain(domainId, {
+        ...(typeof body.name === "string" ? { name: body.name } : {}),
+        ...(typeof body.summary === "string" ? { summary: body.summary } : {}),
+        ...(typeof body.frozen === "boolean" ? { frozen: body.frozen } : {}),
+      });
+      persistCurrentState();
+      return json({ domain, report: null });
     } catch (error) {
       return badRequest(error);
     }

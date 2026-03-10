@@ -246,18 +246,23 @@ export function ingestDropAction(state: WellState, input: {
 export function updateDropAction(
   state: WellState,
   dropId: string,
-  input: Partial<Pick<Drop, "summary" | "title" | "position">> & { skipAutoFlow?: boolean },
+  input: Partial<Pick<Drop, "summary" | "title" | "position" | "domainId" | "clusterId" | "clusterLabel" | "frozenPlacement">> & { skipAutoFlow?: boolean },
 ): ActionResult<Drop> {
   const drop = updateDropInState(state, dropId, input);
+  const changedSummaryOnly = !input.position && !input.domainId && !input.clusterId && input.frozenPlacement === undefined;
   return {
     value: drop,
     changedDropIds: [drop.dropId],
     logs: input.skipAutoFlow
       ? []
       : [makeRunLog({
-        stage: input.position ? "organize" : "analyze",
+        stage: input.position || input.domainId || input.clusterId ? "organize" : "analyze",
         status: "pass",
-        summary: input.position ? "asset.position.edited" : "asset.summary.edited",
+        summary: input.position
+          ? "asset.position.edited"
+          : changedSummaryOnly
+            ? "asset.summary.edited"
+            : "asset.structure.edited",
         payload: { dropId: drop.dropId },
       })],
   };
@@ -383,12 +388,13 @@ export function applyProposalAction(state: WellState, proposal: ChangeProposal):
     changedDropIds,
     logs: [makeRunLog({
       stage: "organize",
-      status: result.appliedAssetPatchCount + result.appliedRelationPatchCount > 0 ? "pass" : "warn",
+      status: result.appliedAssetPatchCount + result.appliedRelationPatchCount + result.appliedDomainPatchCount > 0 ? "pass" : "warn",
       summary: "proposal.applied",
       payload: {
         proposalId: proposal.proposalId,
         appliedAssetPatchCount: result.appliedAssetPatchCount,
         appliedRelationPatchCount: result.appliedRelationPatchCount,
+        appliedDomainPatchCount: result.appliedDomainPatchCount,
         gateStatus: proposal.gateStatus,
         changedDropIds: result.changedDropIds,
       },

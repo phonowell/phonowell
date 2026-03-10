@@ -153,7 +153,11 @@ export function ingestDrop(state: WellState, input: {
   return structuredClone(drop);
 }
 
-export function updateDrop(state: WellState, dropId: string, input: Partial<Pick<Drop, "summary" | "title" | "position">>): Drop {
+export function updateDrop(
+  state: WellState,
+  dropId: string,
+  input: Partial<Pick<Drop, "summary" | "title" | "position" | "domainId" | "clusterId" | "clusterLabel" | "frozenPlacement">>,
+): Drop {
   const drop = state.drops.find((item) => item.dropId === dropId);
   if (!drop) {
     throw new Error(`drop not found: ${dropId}`);
@@ -167,6 +171,18 @@ export function updateDrop(state: WellState, dropId: string, input: Partial<Pick
   }
   if (typeof input.summary === "string" || typeof input.title === "string") {
     refreshAcceptanceTraceLinks(drop, state);
+  }
+  if (typeof input.domainId === "string" && input.domainId.trim()) {
+    drop.domainId = input.domainId.trim();
+  }
+  if (typeof input.clusterId === "string" && input.clusterId.trim()) {
+    drop.clusterId = input.clusterId.trim();
+  }
+  if (typeof input.clusterLabel === "string") {
+    drop.clusterLabel = input.clusterLabel.trim() || undefined;
+  }
+  if (typeof input.frozenPlacement === "boolean") {
+    drop.frozenPlacement = input.frozenPlacement;
   }
   if (input.position && Number.isFinite(input.position.x) && Number.isFinite(input.position.y)) {
     drop.position = { x: Number(input.position.x), y: Number(input.position.y) };

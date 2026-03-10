@@ -36,11 +36,14 @@
   "devDependencies": {
     "@types/node": "^25.3.5",
     "esbuild": "^0.27.3",
+    "promptfoo": "^0.121.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^2.0.4",
     "@openai/codex-sdk": "^0.112.0",
+    "@xyflow/react": "^12.10.1",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "react": "^19.1.1",

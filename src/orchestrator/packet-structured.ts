@@ -60,7 +60,12 @@ export function enrichStructuredOutput(stage: PacketStage, context: PacketContex
   if (stage === "verify") {
     const issues = [...(next.issues ?? [])];
     const suggestions = [...(next.suggestions ?? [])];
-    if (issues.length === 0 && (next.assetPatches?.length ?? 0) === 0 && (next.relationPatches?.length ?? 0) === 0) {
+    if (
+      issues.length === 0
+      && (next.assetPatches?.length ?? 0) === 0
+      && (next.relationPatches?.length ?? 0) === 0
+      && (next.domainPatches?.length ?? 0) === 0
+    ) {
       issues.push("verify produced no concrete patch or remediation evidence");
       suggestions.push("add at least one focused asset update or remediation patch for the highest ROI gap");
       provenanceNotes.push("system added verify issue because verify returned no remediation evidence");
@@ -86,10 +91,11 @@ export function enrichStructuredOutput(stage: PacketStage, context: PacketContex
 
   next.changedDropIds = [...changedDropIds];
   if (!next.summary || next.summary.trim().length < 24) {
-    next.summary = `${stage} packet processed ${next.changedDropIds.length} changed drops with ${next.assetPatches?.length ?? 0} asset patches and ${next.relationPatches?.length ?? 0} relation patches.`;
+    next.summary = `${stage} packet processed ${next.changedDropIds.length} changed drops with ${next.assetPatches?.length ?? 0} asset patches, ${next.relationPatches?.length ?? 0} relation patches, and ${next.domainPatches?.length ?? 0} domain patches.`;
   }
   next.assetPatches = next.assetPatches ?? [];
   next.relationPatches = next.relationPatches ?? [];
+  next.domainPatches = next.domainPatches ?? [];
   next.outputSource = next.outputSource ?? "model";
   next.provenanceNotes = provenanceNotes;
   return next;
@@ -103,6 +109,7 @@ export function buildFallbackStructured(stage: PacketStage, context: PacketConte
         changedDropIds: context.generationDiff?.changedDropIds ?? [],
         assetPatches: [],
         relationPatches: [],
+        domainPatches: [],
         outputSource: "fallback",
         provenanceNotes: ["fallback analyze output generated because model execution failed"],
       };
@@ -112,6 +119,7 @@ export function buildFallbackStructured(stage: PacketStage, context: PacketConte
         changedDropIds: context.generationDiff?.changedDropIds ?? [],
         assetPatches: [],
         relationPatches: [],
+        domainPatches: [],
         outputSource: "fallback",
         provenanceNotes: ["fallback gap-fill output generated because model execution failed"],
       };
@@ -141,6 +149,7 @@ export function buildFallbackStructured(stage: PacketStage, context: PacketConte
         ],
         assetPatches: [],
         relationPatches: [],
+        domainPatches: [],
         outputSource: "fallback",
         provenanceNotes: ["fallback generate output generated because model execution failed"],
       };
@@ -153,6 +162,7 @@ export function buildFallbackStructured(stage: PacketStage, context: PacketConte
         acceptanceCoverageDropIds: [],
         assetPatches: [],
         relationPatches: [],
+        domainPatches: [],
         outputSource: "fallback",
         provenanceNotes: ["fallback verify output generated because model execution failed"],
       };
@@ -162,6 +172,7 @@ export function buildFallbackStructured(stage: PacketStage, context: PacketConte
         changedDropIds: [],
         assetPatches: [],
         relationPatches: [],
+        domainPatches: [],
         outputSource: "fallback",
         provenanceNotes: ["fallback packet output generated because model execution failed"],
       };
@@ -182,6 +193,7 @@ export function parseStructuredOutput(raw: string, fallback: PacketStructuredOut
         ...(Array.isArray(parsed.acceptanceCoverageDropIds) ? { acceptanceCoverageDropIds: parsed.acceptanceCoverageDropIds.filter((item) => typeof item === "string") } : {}),
         assetPatches: Array.isArray(parsed.assetPatches) ? parsed.assetPatches : [],
         relationPatches: Array.isArray(parsed.relationPatches) ? parsed.relationPatches : [],
+        domainPatches: Array.isArray(parsed.domainPatches) ? parsed.domainPatches : [],
         outputSource: "model",
         ...(Array.isArray(parsed.provenanceNotes) ? { provenanceNotes: parsed.provenanceNotes.filter((item) => typeof item === "string") } : {}),
       },

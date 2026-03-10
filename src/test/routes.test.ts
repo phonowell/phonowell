@@ -93,6 +93,13 @@ test("observability hides packet and proposal details when debug api is disabled
   const engine = new PhonoWellEngine();
   engine.bootstrapInitialState();
   engine.updateGoalOrigin({ status: "confirmed" });
+  engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "全局规则",
+    summary: "所有资产都应该是中文",
+    preserveOrphan: true,
+  });
   await engine.runDeepOrganize("test.observability");
 
   const response = await handleReadRoutes(makeCtx({
@@ -108,6 +115,9 @@ test("observability hides packet and proposal details when debug api is disabled
   assert.equal(payload.latestProposal, null);
   assert.equal(payload.latestPacketStructuredSummary, null);
   assert.equal(payload.latestStructuredApplyLog, null);
+  assert.equal(Array.isArray(payload.workspacePolicies), true);
+  assert.equal(payload.workspacePolicies.length, 1);
+  assert.equal(typeof payload.workspaceView?.suggestedMode, "string");
 });
 
 test("state route redacts debug-only internals when debug api is disabled", async () => {
@@ -542,11 +552,22 @@ test("manual runtime routes expose organize, dry-run, generate, and verify contr
   const generate = await handleRuntimeRoutes(makeCtx({
     engine,
     method: "POST",
-    path: "/api/generate",
+    path: "/api/generate/preview",
   }));
   assert.ok(generate);
   assert.equal(generate.status, 200);
-  assert.ok(JSON.parse(generate.body).candidate.candidateId);
+  const previewPayload = JSON.parse(generate.body);
+  assert.equal(Array.isArray(previewPayload.preview.diff.entries), true);
+  assert.equal(typeof previewPayload.preview.dryRunReport.gateResult, "string");
+
+  const generated = await handleRuntimeRoutes(makeCtx({
+    engine,
+    method: "POST",
+    path: "/api/generate",
+  }));
+  assert.ok(generated);
+  assert.equal(generated.status, 200);
+  assert.ok(JSON.parse(generated.body).candidate.candidateId);
 
   const verify = await handleRuntimeRoutes(makeCtx({
     engine,
@@ -593,6 +614,91 @@ test("drop update rejects invalid position payload", async () => {
   assert.ok(response);
   assert.equal(response.status, 400);
   assert.match(response.body, /invalid position\.x/);
+});
+
+test("drop update persists domain correction fields without re-entering auto flow", async () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  const created = engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "Need better placement",
+    summary: "This asset should be manually pinned into a clearer domain cluster.",
+    preserveOrphan: true,
+  });
+  const targetDomain = engine.getState().domainNodes.find((node) => node.kind === "workspace")
+    ?? engine.getState().domainNodes.find((node) => node.kind === "system");
+
+  assert.ok(targetDomain);
+  if (!targetDomain) {
+    throw new Error("expected domain node");
+  }
+
+  const response = await handleAssetRoutes(makeCtx({
+    engine,
+    method: "PUT",
+    path: `/api/drops/${created.dropId}`,
+    body: {
+      domainId: targetDomain.domainId,
+      clusterLabel: "Pinned Cluster",
+      frozenPlacement: true,
+    },
+  }));
+
+  assert.ok(response);
+  assert.equal(response.status, 200);
+
+  const updated = engine.getState().drops.find((drop) => drop.dropId === created.dropId);
+  assert.equal(updated?.domainId, targetDomain.domainId);
+  assert.equal(updated?.clusterLabel, "Pinned Cluster");
+  assert.equal(updated?.frozenPlacement, true);
+  assert.ok(engine.getState().activityTimeline.some((item) =>
+    item.kind === "correction" && item.relatedDropIds.includes(created.dropId),
+  ));
+});
+
+test("domain route persists workspace rename and freeze edits", async () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.ingestDrop({
+    type: "note",
+    source: "user",
+    title: "Combat notes",
+    summary: "Weapons, enemies, and encounter balancing.",
+    preserveOrphan: true,
+  });
+  const organized = engine.getState();
+  const { organizeInboxDomains } = await import("../orchestrator/domain-map-service.js");
+  organizeInboxDomains(organized, "test.route.domain-update");
+  engine.replaceState(organized);
+
+  const target = engine.getState().domainNodes.find((node) => node.kind === "workspace");
+  assert.ok(target);
+  if (!target) {
+    throw new Error("expected workspace domain");
+  }
+
+  const response = await handleAssetRoutes(makeCtx({
+    engine,
+    method: "PUT",
+    path: `/api/domains/${target.domainId}`,
+    body: {
+      name: "Locked Combat",
+      summary: "Manually curated combat domain.",
+      frozen: true,
+    },
+  }));
+
+  assert.ok(response);
+  assert.equal(response.status, 200);
+
+  const updated = engine.getState().domainNodes.find((node) => node.domainId === target.domainId);
+  assert.equal(updated?.name, "Locked Combat");
+  assert.equal(updated?.summary, "Manually curated combat domain.");
+  assert.equal(updated?.frozen, true);
+  assert.ok(engine.getState().activityTimeline.some((item) =>
+    item.kind === "domain-updated" && item.relatedDomainIds.includes(target.domainId),
+  ));
 });
 
 test("static serving rejects paths outside the web root", () => {

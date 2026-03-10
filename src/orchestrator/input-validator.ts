@@ -100,6 +100,10 @@ export function validateUpdateDropInput(input: unknown): {
   title?: string;
   summary?: string;
   position?: { x: number; y: number };
+  domainId?: string;
+  clusterId?: string;
+  clusterLabel?: string;
+  frozenPlacement?: boolean;
   skipAutoFlow?: boolean;
 } {
   if (!isObject(input)) {
@@ -109,10 +113,18 @@ export function validateUpdateDropInput(input: unknown): {
   const hasChange =
     body.title !== undefined
     || body.summary !== undefined
-    || body.position !== undefined;
-  ensure(hasChange, "drop update payload requires title, summary, or position");
+    || body.position !== undefined
+    || body.domainId !== undefined
+    || body.clusterId !== undefined
+    || body.clusterLabel !== undefined
+    || body.frozenPlacement !== undefined;
+  ensure(hasChange, "drop update payload requires title, summary, position, domainId, clusterId, clusterLabel, or frozenPlacement");
   if (body.title !== undefined) ensure(typeof body.title === "string", "drop update payload has invalid title");
   if (body.summary !== undefined) ensure(typeof body.summary === "string", "drop update payload has invalid summary");
+  if (body.domainId !== undefined) ensure(typeof body.domainId === "string", "drop update payload has invalid domainId");
+  if (body.clusterId !== undefined) ensure(typeof body.clusterId === "string", "drop update payload has invalid clusterId");
+  if (body.clusterLabel !== undefined) ensure(typeof body.clusterLabel === "string", "drop update payload has invalid clusterLabel");
+  if (body.frozenPlacement !== undefined) ensure(typeof body.frozenPlacement === "boolean", "drop update payload has invalid frozenPlacement");
   if (body.position !== undefined) {
     ensure(isObject(body.position), "drop update payload has invalid position");
     const position = body.position as Record<string, unknown>;
@@ -121,6 +133,26 @@ export function validateUpdateDropInput(input: unknown): {
   }
   if (body.skipAutoFlow !== undefined) ensure(typeof body.skipAutoFlow === "boolean", "drop update payload has invalid skipAutoFlow");
   return body as ReturnType<typeof validateUpdateDropInput>;
+}
+
+export function validateUpdateDomainInput(input: unknown): {
+  name?: string;
+  summary?: string;
+  frozen?: boolean;
+} {
+  if (!isObject(input)) {
+    throw new Error("domain update payload must be an object");
+  }
+  const body: Record<string, unknown> = input;
+  const hasChange =
+    body.name !== undefined
+    || body.summary !== undefined
+    || body.frozen !== undefined;
+  ensure(hasChange, "domain update payload requires name, summary, or frozen");
+  if (body.name !== undefined) ensure(typeof body.name === "string", "domain update payload has invalid name");
+  if (body.summary !== undefined) ensure(typeof body.summary === "string", "domain update payload has invalid summary");
+  if (body.frozen !== undefined) ensure(typeof body.frozen === "boolean", "domain update payload has invalid frozen");
+  return body as ReturnType<typeof validateUpdateDomainInput>;
 }
 
 export function validateRelationInput(input: unknown): { fromDropId: string; toDropId: string; relationType?: RelationType } {

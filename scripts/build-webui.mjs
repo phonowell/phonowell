@@ -7,6 +7,9 @@ await build({
   platform: "browser",
   target: ["es2022"],
   outfile: "webui/app.bundle.js",
+  loader: {
+    ".js": "jsx",
+  },
   minify: true,
   sourcemap: false,
   legalComments: "none",

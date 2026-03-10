@@ -176,6 +176,15 @@ export async function handleRuntimeRoutes(ctx: ApiContext) {
       return json({ error: String((error as Error).message) }, 400);
     }
   }
+  if (method === "POST" && url.pathname === "/api/generate/preview") {
+    try {
+      const preview = engine.previewGeneration();
+      persistCurrentState();
+      return json({ preview });
+    } catch (error) {
+      return json({ error: String((error as Error).message) }, 400);
+    }
+  }
   if (method === "POST" && url.pathname === "/api/verify") {
     try {
       const verify = await engine.verifyLatest();

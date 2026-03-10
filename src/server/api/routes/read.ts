@@ -5,6 +5,8 @@ import { evaluateCoreGate } from "../../../orchestrator/core-gate.js";
 import { importCatalogIntoState } from "../../../orchestrator/importer.js";
 import { getActiveProject, listProjects } from "../../../orchestrator/store.js";
 import { getSchemaManifest } from "../../../orchestrator/index.js";
+import { summarizeWorkspaceView } from "../../../orchestrator/workspace-view.js";
+import { listWorkspacePolicies } from "../../../orchestrator/workspace-policy-service.js";
 import type { WellState } from "../../../orchestrator/types.js";
 import type { ApiContext } from "../context.js";
 import { json } from "../http.js";
@@ -40,6 +42,10 @@ async function buildObservabilitySnapshot(ctx: ApiContext) {
     acc[relation.relationType] = (acc[relation.relationType] ?? 0) + 1;
     return acc;
   }, {});
+  const domainCounts = state.domainNodes.reduce<Record<string, number>>((acc, domain) => {
+    acc[domain.kind] = (acc[domain.kind] ?? 0) + 1;
+    return acc;
+  }, {});
   const latestPacket = ctx.debugMode ? ctx.engine.getPacketRecords()[0] ?? null : null;
   const latestProposal = ctx.debugMode ? ctx.engine.getProposals()[0] ?? null : null;
   const latestPacketStructuredSummary = ctx.debugMode && latestPacket?.response.structured
@@ -48,6 +54,7 @@ async function buildObservabilitySnapshot(ctx: ApiContext) {
         changedDropCount: latestPacket.response.structured.changedDropIds?.length ?? 0,
         assetPatchCount: latestPacket.response.structured.assetPatches?.length ?? 0,
         relationPatchCount: latestPacket.response.structured.relationPatches?.length ?? 0,
+        domainPatchCount: latestPacket.response.structured.domainPatches?.length ?? 0,
         issueCount: latestPacket.response.structured.issues?.length ?? 0,
         suggestionCount: latestPacket.response.structured.suggestions?.length ?? 0,
       }
@@ -61,6 +68,7 @@ async function buildObservabilitySnapshot(ctx: ApiContext) {
     totalAssetCount: state.drops.length,
     layerCounts,
     relationCounts,
+    domainCounts,
     contractManifest: {
       schemaVersion: contractManifest.schemaVersion,
       compiledAt: contractManifest.compiledAt,
@@ -85,6 +93,10 @@ async function buildObservabilitySnapshot(ctx: ApiContext) {
     latestPacketStructuredSummary,
     latestStructuredApplyLog: ctx.debugMode ? state.runLogs.find((log) => log.summary === "proposal.applied") ?? null : null,
     automationTasks: state.automationTasks ?? [],
+    activityTimeline: state.activityTimeline ?? [],
+    latestGenerationRun: state.generationHistory?.[0] ?? null,
+    workspacePolicies: listWorkspacePolicies(state),
+    workspaceView: summarizeWorkspaceView(state),
   };
 }
 
@@ -166,10 +178,14 @@ export async function handleReadRoutes(ctx: ApiContext) {
     fresh.runLogs = [];
     fresh.candidates = [];
     fresh.proposals = [];
+    fresh.domainNodes = [];
+    fresh.domainEdges = [];
     fresh.verifyReports = [];
     fresh.verifyCycles = [];
     fresh.unresolvedQuestions = [];
     fresh.automationTasks = [];
+    fresh.activityTimeline = [];
+    fresh.generationHistory = [];
     fresh.well.status = "goal-origin-init";
     fresh.well.dryRunStatus = "warn";
     fresh.well.dryRunReport = undefined;

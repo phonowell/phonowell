@@ -27,6 +27,8 @@ import type {
   Priority,
   PriorityLifecycleAuditRecord,
   ProjectState,
+  RequirementDiffSnapshot,
+  RequirementSnapshot,
   Relation,
   RelationType,
   ReviewCheckpoint,
@@ -47,6 +49,22 @@ import { deriveUnresolvedQuestions } from "./conflict-service.js";
 import { buildProposalFromPacket } from "./proposal-service.js";
 import { evaluateDryRun } from "./dry-run-service.js";
 import { buildCandidateArtifact } from "./generation-service.js";
+import {
+  ensureDomainStructures,
+  organizeInboxDomains,
+  pushActivity,
+  updateDomainNode,
+} from "./domain-map-service.js";
+import {
+  buildRequirementDiff,
+  buildRequirementSnapshot,
+  recordGenerationRun,
+} from "./generation-requirements.js";
+import {
+  listWorkspacePolicies,
+  listWorkspacePolicyTargets,
+  stabilizeWorkspacePolicies,
+} from "./workspace-policy-service.js";
 import {
   applyActionResult,
   applyMicroLifecycleAction,
@@ -188,6 +206,8 @@ export class PhonoWellEngine {
       well,
       drops: canonicalDrops,
       relations,
+      domainNodes: [],
+      domainEdges: [],
       candidates: [],
       proposals: [],
       verifyReports: [],
@@ -199,8 +219,11 @@ export class PhonoWellEngine {
       unresolvedQuestions: [],
       assetConversations: [],
       automationTasks: [],
+      activityTimeline: [],
+      generationHistory: [],
       assistantLoop: makeDefaultAssistantLoopState(createdAt),
     };
+    ensureDomainStructures(this.state);
   }
 
   bootstrapInitialState(): WellState {
@@ -261,6 +284,8 @@ export class PhonoWellEngine {
     this.state.relations = synced.relations.filter(
       (rel) => dropIds.has(rel.fromDropId) && dropIds.has(rel.toDropId),
     );
+    this.state.domainNodes = synced.domainNodes ?? [];
+    this.state.domainEdges = synced.domainEdges ?? [];
     this.state.candidates = synced.candidates;
     this.state.proposals = synced.proposals ?? [];
     this.state.verifyReports = synced.verifyReports;
@@ -272,7 +297,10 @@ export class PhonoWellEngine {
     this.state.unresolvedQuestions = synced.unresolvedQuestions;
     this.state.assetConversations = synced.assetConversations ?? [];
     this.state.automationTasks = synced.automationTasks ?? [];
+    this.state.activityTimeline = synced.activityTimeline ?? [];
+    this.state.generationHistory = synced.generationHistory ?? [];
     this.state.assistantLoop = synced.assistantLoop ?? makeDefaultAssistantLoopState();
+    ensureDomainStructures(this.state);
     this.refreshAssistantLoop(this.state.assistantLoop.lastError);
     return this.getState();
   }
@@ -325,6 +353,7 @@ export class PhonoWellEngine {
     state.relations = [...relationByKey.values()].filter(
       (rel) => validDropIds.has(rel.fromDropId) && validDropIds.has(rel.toDropId),
     );
+    ensureDomainStructures(state);
     state.schemaVersion = "1.1.0";
     return state;
   }
@@ -506,6 +535,7 @@ export class PhonoWellEngine {
       if (inferredLinks.length > 0) {
         appendAcceptanceTraceLinks(drop, inferredLinks);
       }
+      organizeInboxDomains(this.state, `automation:${task.taskId}`);
       const preflightBefore = this.state.well.dryRunReport?.gateResult ?? "none";
       const preflight = this.runDryRun();
       decisions.push({
@@ -793,14 +823,73 @@ export class PhonoWellEngine {
     preserveOrphan?: boolean;
   }): Drop {
     const drop = applyActionResult(this.state, ingestDropAction(this.state, input));
+    ensureDomainStructures(this.state);
+    pushActivity(this.state, {
+      actor: "user",
+      kind: "ingest",
+      summary: `Added asset ${drop.title}`,
+      detail: "New assets land in inbox until AI organizes them.",
+      relatedDomainIds: [drop.domainId ?? "domain-inbox"],
+      relatedDropIds: [drop.dropId],
+    });
     this.refreshAssistantLoop();
     return drop;
   }
 
-  updateDrop(dropId: string, input: Partial<Pick<Drop, "summary" | "title" | "position">> & { skipAutoFlow?: boolean }): Drop {
+  updateDrop(
+    dropId: string,
+    input: Partial<Pick<Drop, "summary" | "title" | "position" | "domainId" | "clusterId" | "clusterLabel" | "frozenPlacement">> & { skipAutoFlow?: boolean },
+  ): Drop {
     const drop = applyActionResult(this.state, updateDropAction(this.state, dropId, input));
+    ensureDomainStructures(this.state);
+    if (input.domainId || input.clusterId || input.clusterLabel || input.frozenPlacement !== undefined) {
+      pushActivity(this.state, {
+        actor: "user",
+        kind: "correction",
+        summary: `Adjusted structure for ${drop.title}`,
+        detail: [
+          input.domainId ? `domainId=${input.domainId}` : null,
+          input.clusterId ? `clusterId=${input.clusterId}` : null,
+          input.clusterLabel ? `clusterLabel=${input.clusterLabel}` : null,
+          input.frozenPlacement !== undefined ? `frozenPlacement=${String(input.frozenPlacement)}` : null,
+        ].filter(Boolean).join("; "),
+        relatedDomainIds: drop.domainId ? [drop.domainId] : [],
+        relatedDropIds: [drop.dropId],
+      });
+    }
     this.refreshAssistantLoop();
     return drop;
+  }
+
+  updateDomain(
+    domainId: string,
+    input: { name?: string; summary?: string; frozen?: boolean },
+  ) {
+    const domain = updateDomainNode(this.state, domainId, {
+      ...input,
+      actor: "user",
+    });
+    this.refreshAssistantLoop();
+    return structuredClone(domain);
+  }
+
+  previewGeneration(): {
+    snapshot: RequirementSnapshot;
+    diff: RequirementDiffSnapshot;
+    dryRunReport: DryRunReport;
+    baselineRecordId?: string;
+  } {
+    ensureDomainStructures(this.state);
+    const dryRunReport = this.runDryRun();
+    const snapshot = buildRequirementSnapshot(this.state);
+    const previous = this.state.generationHistory[0];
+    const diff = buildRequirementDiff(previous?.snapshot, snapshot);
+    return {
+      snapshot,
+      diff,
+      dryRunReport,
+      baselineRecordId: previous?.recordId,
+    };
   }
 
   connectDrops(fromDropId: string, toDropId: string, relationType: RelationType = "references"): Relation {
@@ -961,6 +1050,7 @@ export class PhonoWellEngine {
   private buildPacketContext(overrides: Partial<PacketContext> = {}): PacketContext {
     const visibleDrops = this.state.drops.filter((drop) => drop.lifecycleState !== "archived");
     const acceptanceDrop = visibleDrops.find((drop) => drop.dropId === this.state.well.acceptanceDropId);
+    const workspacePolicies = listWorkspacePolicies(this.state);
     return {
       projectId: this.state.project.projectId,
       projectName: this.state.project.name,
@@ -982,6 +1072,15 @@ export class PhonoWellEngine {
         priority: drop.priority,
         layer: drop.layer,
       })),
+      activeDomains: this.state.domainNodes.map((domain) => ({
+        domainId: domain.domainId,
+        name: domain.name,
+        summary: domain.summary,
+        kind: domain.kind,
+        assetCount: domain.assetDropIds.length,
+        frozen: domain.frozen,
+      })),
+      workspacePolicies,
       latestCandidateId: this.state.candidates[0]?.candidateId,
       latestCandidateSummary: this.state.candidates[0]?.content.slice(0, 1000),
       latestPacketSummary: this.state.packetRecords[0]?.response.structured?.summary ?? this.state.packetRecords[0]?.response.summary,
@@ -1030,6 +1129,8 @@ export class PhonoWellEngine {
     analyzeProposal?: ChangeProposal;
     gapFillPacket: PacketRecord;
     gapFillProposal?: ChangeProposal;
+    policyPacket?: PacketRecord;
+    policyProposal?: ChangeProposal;
   }> {
     // Keep the local hypothesis/conflict layer current so packet context is stable,
     // but let the packet stages drive the actual organize decisions.
@@ -1054,6 +1155,57 @@ export class PhonoWellEngine {
 
     applyActionResult(this.state, runHeuristicOrganizeAction(this.state));
     this.applyMicroLifecycle();
+    const stabilizedPolicies = stabilizeWorkspacePolicies(this.state, trigger);
+    const organized = organizeInboxDomains(this.state, trigger);
+    const activePolicies = stabilizedPolicies.activatedPolicies;
+    let policyPacket: PacketRecord | undefined;
+    let policyProposal: ChangeProposal | undefined;
+
+    if (activePolicies.length > 0) {
+      const policyTargets = listWorkspacePolicyTargets(this.state, activePolicies);
+      const policyContext: Partial<PacketContext> = {
+        activeDropIds: policyTargets.map((drop) => drop.dropId),
+        activeDropSummaries: policyTargets.map((drop) => ({
+          dropId: drop.dropId,
+          type: drop.type,
+          title: drop.title,
+          summary: drop.summary,
+          priority: drop.priority,
+          layer: drop.layer,
+        })),
+        policyExecutionHint: [
+          "Apply the active workspace policies to the current workspace.",
+          "Treat policy assets as governance rules, not ordinary content.",
+          "Prefer minimal updates to drop titles, summaries, contents, and workspace domain names/summaries.",
+        ].join(" "),
+      };
+      policyPacket = await this.runPacketStage("analyze", policyContext);
+      policyProposal = this.state.proposals.find((item) => item.sourcePacketId === policyPacket?.packetId);
+      if (policyProposal?.status === "proposed" && policyProposal.gateStatus !== "fail") {
+        this.applyProposal(policyProposal);
+      }
+      pushActivity(this.state, {
+        actor: "ai",
+        kind: "policy-applied",
+        summary: `Workspace policies evaluated (${activePolicies.length})`,
+        detail: `trigger=${trigger}; targets=${policyTargets.length}; packet=${policyPacket.packetId}; applied=${policyProposal?.status === "applied" ? "yes" : "no"}`,
+        relatedDomainIds: this.state.domainNodes
+          .filter((domain) => domain.kind === "workspace")
+          .map((domain) => domain.domainId),
+        relatedDropIds: activePolicies.map((policy) => policy.sourceDropId),
+      });
+    }
+
+    if (organized.assignedDropIds.length > 0 || organized.createdDomainIds.length > 0) {
+      pushActivity(this.state, {
+        actor: "ai",
+        kind: "organize",
+        summary: `Organized ${organized.assignedDropIds.length} inbox assets into ${organized.createdDomainIds.length} active domains`,
+        detail: `trigger=${trigger}`,
+        relatedDomainIds: organized.createdDomainIds,
+        relatedDropIds: organized.assignedDropIds,
+      });
+    }
     this.pushRunLog({
       stage: "organize",
       status: "pass",
@@ -1064,6 +1216,9 @@ export class PhonoWellEngine {
         analyzeProposalId: analyzeProposal?.proposalId ?? null,
         gapFillPacketId: gapFillPacket.packetId,
         gapFillProposalId: gapFillProposal?.proposalId ?? null,
+        activeWorkspacePolicyCount: activePolicies.length,
+        policyPacketId: policyPacket?.packetId ?? null,
+        policyProposalId: policyProposal?.proposalId ?? null,
       },
     });
     this.refreshAssistantLoop();
@@ -1073,6 +1228,8 @@ export class PhonoWellEngine {
       ...(analyzeProposal ? { analyzeProposal: structuredClone(analyzeProposal) } : {}),
       gapFillPacket: structuredClone(gapFillPacket),
       ...(gapFillProposal ? { gapFillProposal: structuredClone(gapFillProposal) } : {}),
+      ...(policyPacket ? { policyPacket: structuredClone(policyPacket) } : {}),
+      ...(policyProposal ? { policyProposal: structuredClone(policyProposal) } : {}),
     };
   }
 
@@ -1659,6 +1816,7 @@ export class PhonoWellEngine {
   }
 
   runDryRun(): DryRunReport {
+    ensureDomainStructures(this.state);
     this.state.well.status = "dry-run";
     const { checks, counters } = evaluateDryRun(this.state);
 
@@ -1704,6 +1862,7 @@ export class PhonoWellEngine {
   async generateArtifact(): Promise<CandidateArtifact> {
     const report = this.state.well.dryRunReport ?? this.runDryRun();
     this.state.well.status = "generate";
+    ensureDomainStructures(this.state);
 
     if (report.gateResult === "fail") {
       throw new Error("generate blocked: dry-run gate is fail");
@@ -1719,9 +1878,24 @@ export class PhonoWellEngine {
     }
     const previousCandidate = this.state.candidates[0];
     const diff = packet.request.context.generationDiff;
+    const requirementSnapshot = buildRequirementSnapshot(this.state);
+    const requirementDiff = buildRequirementDiff(this.state.generationHistory[0]?.snapshot, requirementSnapshot);
     const candidate = buildCandidateArtifact(this.state, packet);
 
     this.state.candidates.unshift(candidate);
+    recordGenerationRun(this.state, {
+      candidateId: candidate.candidateId,
+      snapshot: requirementSnapshot,
+      diff: requirementDiff,
+    });
+    pushActivity(this.state, {
+      actor: "ai",
+      kind: "generate",
+      summary: `Generated candidate ${candidate.candidateId}`,
+      detail: requirementDiff.summary,
+      relatedDomainIds: this.state.domainNodes.filter((node) => node.kind === "workspace").map((node) => node.domainId),
+      relatedDropIds: [...this.state.pendingChangedDropIds],
+    });
 
     this.pushRunLog({
       stage: "generate",
@@ -1745,6 +1919,7 @@ export class PhonoWellEngine {
 
   async verifyLatest(): Promise<VerifyReport> {
     this.state.well.status = "verify";
+    ensureDomainStructures(this.state);
 
     const candidate = this.state.candidates[0];
     if (!candidate) {
@@ -1811,6 +1986,14 @@ export class PhonoWellEngine {
     this.state.selfIterationRecords.unshift(selfIterationRecord);
     this.state.selfIterationRecords = this.state.selfIterationRecords.slice(0, 20);
     this.refreshAssistantLoop();
+    pushActivity(this.state, {
+      actor: "ai",
+      kind: "verify",
+      summary: verifyReport.pass ? "Verified latest candidate successfully" : "Latest candidate still has verification risk",
+      detail: verifyReport.issues[0] ?? undefined,
+      relatedDomainIds: this.state.domainNodes.filter((node) => node.kind === "workspace").map((node) => node.domainId),
+      relatedDropIds: verifyReport.changedDropIds,
+    });
 
     return structuredClone(verifyReport);
   }
