@@ -1,13 +1,15 @@
+---
+dropId: drop-canon-acceptance-contract
+type: canonical-bundle
+domain: core
+scope: well-global
+owner: product-core
+layer: contract
+priority: p0
+title: Canonical Acceptance Contract Asset
+active: true
+---
 # Canonical Acceptance Contract Asset
-
-## Asset Metadata
-
-- `drop-id`: `drop-canon-acceptance-contract`
-- `type`: `canonical-bundle`
-- `domain`: `core`
-- `scope`: `well-global`
-- `owner`: `product-core`
-- `priority`: `p0`
 
 ## Purpose
 

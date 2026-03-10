@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phonowell.dev/schemas/candidate.schema.json",
+  "title": "Phonowell Candidate Artifact",
+  "type": "object",
+  "required": ["candidateId", "wellId", "content", "coverageDropIds", "createdAt"],
+  "properties": {
+    "candidateId": { "type": "string" },
+    "wellId": { "type": "string" },
+    "content": { "type": "string" },
+    "coverageDropIds": { "type": "array", "items": { "type": "string" } },
+    "relationKeys": { "type": "array", "items": { "type": "string" } },
+    "wishSnapshot": { "type": "string" },
+    "definitionOfDoneSnapshot": { "type": "array", "items": { "type": "string" } },
+    "constraintsSnapshot": { "type": "array", "items": { "type": "string" } },
+    "acceptanceDropIdSnapshot": { "type": "string" },
+    "packetId": { "type": "string" },
+    "createdAt": { "type": "string" }
+  }
+}

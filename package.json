@@ -1,0 +1,49 @@
+{
+  "name": "phonowell",
+  "version": "0.1.0",
+  "description": "Drop everything in. Make a wish. Let it resonate into one artifact.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "node --import tsx --test src/test/**/*.test.ts",
+    "compile:assets": "node scripts/compile-asset-contracts.mjs",
+    "dev": "pnpm run compile:assets && pnpm run build:webui && tsx src/server.ts",
+    "start": "node dist/server.js",
+    "check": "tsx src/cli/dry-run.ts",
+    "dry-run": "tsx src/cli/dry-run.ts",
+    "build:webui": "node scripts/build-webui.mjs",
+    "build": "pnpm run compile:assets && pnpm run build:webui && tsc -p tsconfig.json",
+    "coverage": "tsx src/cli/coverage.ts",
+    "core-gate": "tsx src/cli/core-gate.ts",
+    "core-gate:offline": "tsx src/cli/core-gate-offline.ts",
+    "import:assets": "tsx src/cli/import-assets.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/phonowell/phonowell.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/phonowell/phonowell/issues"
+  },
+  "homepage": "https://github.com/phonowell/phonowell#readme",
+  "private": true,
+  "devDependencies": {
+    "@types/node": "^25.3.5",
+    "esbuild": "^0.27.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@openai/codex-sdk": "^0.112.0",
+    "ajv": "^8.18.0",
+    "ajv-formats": "^3.0.1",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  }
+}

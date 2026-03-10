@@ -1,13 +1,15 @@
+---
+dropId: drop-ref-visualization-first
+type: reference-principle
+domain: reference
+scope: well-global
+owner: ux-core
+layer: reference
+priority: p1
+title: Visualization-First Reference Asset
+active: true
+---
 # Visualization-First Reference Asset
-
-## Asset Metadata
-
-- `drop-id`: `drop-ref-visualization-first`
-- `type`: `reference-principle`
-- `domain`: `reference`
-- `scope`: `well-global`
-- `owner`: `ux-core`
-- `priority`: `p1`
 
 ## Purpose
 

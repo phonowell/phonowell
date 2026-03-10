@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phonowell.dev/schemas/phonowell-asset.schema.json",
+  "title": "Phonowell Catalog Asset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "dropId",
+    "type",
+    "domain",
+    "scope",
+    "owner",
+    "layer",
+    "priority",
+    "title",
+    "summary",
+    "sourceFile",
+    "active"
+  ],
+  "properties": {
+    "dropId": { "type": "string", "minLength": 1 },
+    "type": {
+      "type": "string",
+      "enum": [
+        "canonical-bundle",
+        "reference-project",
+        "reference-tech",
+        "reference-tool",
+        "reference-principle",
+        "reference-engineering",
+        "goal-origin",
+        "generated-intent-hypothesis",
+        "generated-gap",
+        "note",
+        "doc",
+        "url",
+        "image",
+        "generated"
+      ]
+    },
+    "domain": {
+      "type": "string",
+      "enum": ["core", "protocol", "delivery", "reference", "legacy"]
+    },
+    "scope": {
+      "type": "string",
+      "enum": ["well-global", "run-local"]
+    },
+    "owner": {
+      "type": "string",
+      "enum": [
+        "product-core",
+        "orchestrator-core",
+        "delivery-core",
+        "architecture-core",
+        "webui-core",
+        "engineering-core",
+        "ux-core",
+        "user"
+      ]
+    },
+    "layer": {
+      "type": "string",
+      "enum": ["contract", "policy", "reference"]
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["p0", "p1", "p2"]
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string", "minLength": 1 },
+    "purpose": { "type": "string" },
+    "sourceFile": { "type": "string", "minLength": 1 },
+    "active": { "type": "boolean" }
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phonowell.dev/schemas/phonowell-state.schema.json",
+  "title": "Phonowell Project State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "project",
+    "well",
+    "drops",
+    "relations",
+    "candidates",
+    "proposals",
+    "verifyReports",
+    "verifyCycles",
+    "selfIterationRecords",
+    "packetRecords",
+    "pendingChangedDropIds",
+    "runLogs",
+    "unresolvedQuestions",
+    "assetConversations",
+    "automationTasks"
+  ],
+  "properties": {
+    "project": {
+      "type": "object",
+      "required": ["projectId", "name", "slug", "workdir", "createdAt", "updatedAt"],
+      "properties": {
+        "projectId": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "workdir": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "well": {
+      "type": "object",
+      "required": [
+        "id",
+        "artifactType",
+        "wish",
+        "definitionOfDone",
+        "constraints",
+        "acceptanceDropId",
+        "status",
+        "dryRunStatus",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "artifactType": { "type": "string" },
+        "wish": { "type": "string" },
+        "definitionOfDone": { "type": "array", "items": { "type": "string" } },
+        "constraints": { "type": "array", "items": { "type": "string" } },
+        "originDropId": { "type": "string" },
+        "acceptanceDropId": { "type": "string" },
+        "status": { "type": "string" },
+        "dryRunStatus": { "type": "string", "enum": ["pass", "warn", "fail"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "schemaVersion": { "type": "string", "enum": ["1.0.0", "1.1.0"] },
+    "drops": { "type": "array", "items": { "$ref": "https://phonowell.dev/schemas/drop.schema.json" } },
+    "relations": { "type": "array", "items": { "$ref": "https://phonowell.dev/schemas/relation.schema.json" } },
+    "candidates": { "type": "array", "items": { "$ref": "https://phonowell.dev/schemas/candidate.schema.json" } },
+    "proposals": { "type": "array", "items": { "type": "object" } },
+    "verifyReports": { "type": "array", "items": { "$ref": "https://phonowell.dev/schemas/verify-report.schema.json" } },
+    "verifyCycles": { "type": "array", "items": { "type": "object" } },
+    "selfIterationRecords": { "type": "array", "items": { "type": "object" } },
+    "packetRecords": { "type": "array", "items": { "$ref": "https://phonowell.dev/schemas/packet-record.schema.json" } },
+    "pendingChangedDropIds": { "type": "array", "items": { "type": "string" } },
+    "runLogs": { "type": "array", "items": { "type": "object" } },
+    "unresolvedQuestions": { "type": "array", "items": { "type": "string" } },
+    "assetConversations": { "type": "array", "items": { "type": "object" } },
+    "automationTasks": { "type": "array", "items": { "type": "object" } }
+  }
+}

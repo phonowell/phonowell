@@ -1,0 +1,979 @@
+{
+  "schemaVersion": "1.1.0",
+  "project": {
+    "projectId": "project-import-smoke",
+    "name": "Import Smoke",
+    "slug": "import-smoke",
+    "workdir": "/Users/mimiko/Projects/phonowell/.phonowell/projects/import-smoke",
+    "createdAt": "2026-03-09T08:06:45.344Z",
+    "updatedAt": "2026-03-09T08:06:45.344Z"
+  },
+  "well": {
+    "id": "well-main",
+    "artifactType": "app",
+    "wish": "Build phonowell WebUI V1",
+    "definitionOfDone": [
+      "Support goal-origin draft/edit/confirm",
+      "Support drop and connect on canvas",
+      "Run dry-run before generate",
+      "Record verify report with acceptance coverage"
+    ],
+    "constraints": [
+      "single artifact target",
+      "low cognitive load",
+      "reuse first"
+    ],
+    "acceptanceDropId": "drop-canon-acceptance-contract",
+    "status": "dry-run",
+    "dryRunStatus": "fail",
+    "createdAt": "2026-03-09T08:05:35.916Z",
+    "updatedAt": "2026-03-09T08:08:48.508Z",
+    "originDropId": "drop-goal-origin-910b3118",
+    "dryRunReport": {
+      "checkTotal": 9,
+      "passCount": 7,
+      "warnCount": 1,
+      "failCount": 1,
+      "criticalWarnCount": 0,
+      "criticalFailCount": 1,
+      "highConflictCount": 0,
+      "missingRequiredCapabilityCount": 0,
+      "acceptanceUnboundCount": 0,
+      "acceptanceUncheckableCount": 0,
+      "selfIterationEvidencePathMissingCount": 1,
+      "assetUnclearCount": 0,
+      "assetMissingPurposeCount": 0,
+      "assetOrphanCount": 0,
+      "designOverlapCount": 0,
+      "designContradictionCount": 0,
+      "designRedundancyCount": 0,
+      "designErrorCount": 0,
+      "designLowRoiCount": 0,
+      "gateResult": "fail",
+      "gateReason": "Fail condition hit in quantified gate thresholds.",
+      "checks": [
+        {
+          "name": "closure",
+          "critical": true,
+          "status": "fail",
+          "evidence": [
+            "goal-origin=drop-goal-origin-910b3118",
+            "definition-of-done=4"
+          ]
+        },
+        {
+          "name": "acceptance",
+          "critical": false,
+          "status": "pass",
+          "evidence": [
+            "acceptance-bound=true",
+            "acceptance-uncheckable=0"
+          ]
+        },
+        {
+          "name": "self-iteration",
+          "critical": false,
+          "status": "warn",
+          "evidence": [
+            "self-iteration-evidence-missing=1"
+          ]
+        },
+        {
+          "name": "completeness",
+          "critical": true,
+          "status": "pass",
+          "evidence": [
+            "asset-orphan-count=0"
+          ]
+        },
+        {
+          "name": "conflict",
+          "critical": true,
+          "status": "pass",
+          "evidence": [
+            "unresolved-questions=0"
+          ]
+        },
+        {
+          "name": "reuse-first",
+          "critical": false,
+          "status": "pass",
+          "evidence": [
+            "reference-drop-count=5"
+          ]
+        },
+        {
+          "name": "reverse-validation",
+          "critical": false,
+          "status": "pass",
+          "evidence": [
+            "dod-items=4"
+          ]
+        },
+        {
+          "name": "asset-clarity",
+          "critical": false,
+          "status": "pass",
+          "evidence": [
+            "asset-unclear-count=0",
+            "asset-missing-purpose-count=0",
+            "asset-orphan-count=0"
+          ]
+        },
+        {
+          "name": "design-health",
+          "critical": false,
+          "status": "pass",
+          "evidence": [
+            "design-overlap-count=0",
+            "design-contradiction-count=0",
+            "design-redundancy-count=0",
+            "design-error-count=0",
+            "design-low-roi-count=0"
+          ]
+        }
+      ],
+      "createdAt": "2026-03-09T08:05:35.923Z"
+    }
+  },
+  "drops": [
+    {
+      "dropId": "drop-goal-origin-910b3118",
+      "wellId": "well-main",
+      "type": "goal-origin",
+      "domain": "core",
+      "scope": "well-global",
+      "source": "ai-generated",
+      "owner": "product-core",
+      "layer": "contract",
+      "title": "Goal Origin",
+      "summary": "Build phonowell WebUI V1",
+      "purpose": "Project anchor for one-well-one-artifact convergence.",
+      "content": "Build phonowell WebUI V1",
+      "priority": "p0",
+      "confidence": 0.88,
+      "licenseState": "known",
+      "goalStatus": "draft",
+      "createdAt": "2026-03-09T08:05:35.922Z",
+      "updatedAt": "2026-03-09T08:05:35.922Z",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "dropId": "drop-a4cff594",
+      "wellId": "well-main",
+      "type": "generated-intent-hypothesis",
+      "domain": "protocol",
+      "scope": "run-local",
+      "source": "ai-generated",
+      "owner": "orchestrator-core",
+      "layer": "contract",
+      "title": "Intent Hypothesis",
+      "summary": "Objective: Build phonowell WebUI V1 | Constraints: single artifact target, low cognitive load, reuse first | Success: Support goal-origin draft/edit/confirm; Support drop and connect on canvas; Run dry-run before generate; Record verify report with acceptance coverage | Non-goals: multi-artifact output, hidden-state decisions",
+      "purpose": "Expose first-principles modeling output and uncertainty explicitly.",
+      "content": "Objective: Build phonowell WebUI V1 | Constraints: single artifact target, low cognitive load, reuse first | Success: Support goal-origin draft/edit/confirm; Support drop and connect on canvas; Run dry-run before generate; Record verify report with acceptance coverage | Non-goals: multi-artifact output, hidden-state decisions",
+      "priority": "p2",
+      "confidence": 0.91,
+      "licenseState": "known",
+      "lifecycleState": "candidate",
+      "parentDropId": "drop-goal-origin-910b3118",
+      "createdAt": "2026-03-09T08:05:35.922Z",
+      "updatedAt": "2026-03-09T08:05:35.922Z"
+    },
+    {
+      "dropId": "drop-canon-core-foundation",
+      "wellId": "well-main",
+      "type": "canonical-bundle",
+      "domain": "core",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "product-core",
+      "layer": "contract",
+      "title": "Canonical Core Foundation Asset",
+      "summary": "Single source of truth for product identity and reasoning constraints. This bundle replaces multiple fragmented principle assets.",
+      "purpose": "Single source of truth for product identity and reasoning constraints. This bundle replaces multiple fragmented principle assets.",
+      "content": "Single source of truth for product identity and reasoning constraints. This bundle replaces multiple fragmented principle assets.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/core-foundation.md",
+      "priority": "p0",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-canon-legacy-archive-boundary",
+      "wellId": "well-main",
+      "type": "canonical-bundle",
+      "domain": "core",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "product-core",
+      "layer": "contract",
+      "title": "Canonical Legacy Archive Boundary Asset",
+      "summary": "Single source of truth that `legacy` assets are archive-only and must not participate in active runtime execution.",
+      "purpose": "Single source of truth that `legacy` assets are archive-only and must not participate in active runtime execution.",
+      "content": "Single source of truth that `legacy` assets are archive-only and must not participate in active runtime execution.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/legacy-archive-boundary.md",
+      "priority": "p0",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-canon-acceptance-contract",
+      "wellId": "well-main",
+      "type": "canonical-bundle",
+      "domain": "core",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "product-core",
+      "layer": "contract",
+      "title": "Canonical Acceptance Contract Asset",
+      "summary": "Single source of truth for artifact acceptance conditions. This asset defines what \"done\" means and what must be verified before release.",
+      "purpose": "Single source of truth for artifact acceptance conditions. This asset defines what \"done\" means and what must be verified before release.",
+      "content": "Single source of truth for artifact acceptance conditions. This asset defines what \"done\" means and what must be verified before release.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/acceptance-contract.md",
+      "priority": "p0",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-canon-execution-protocol",
+      "wellId": "well-main",
+      "type": "canonical-bundle",
+      "domain": "protocol",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "orchestrator-core",
+      "layer": "contract",
+      "title": "Canonical Execution Protocol Asset",
+      "summary": "Single source of truth for how chat signals become executable asset graph state.",
+      "purpose": "Single source of truth for how chat signals become executable asset graph state.",
+      "content": "Single source of truth for how chat signals become executable asset graph state.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/execution-protocol.md",
+      "priority": "p0",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-canon-data-format-contract",
+      "wellId": "well-main",
+      "type": "canonical-bundle",
+      "domain": "protocol",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "orchestrator-core",
+      "layer": "contract",
+      "title": "Canonical Data Format Contract Asset",
+      "summary": "Single source of truth for the standard phonowell data model and persistence format. This asset defines how active assets, runtime state, generation diffs, and verification evidence must be represented.",
+      "purpose": "Single source of truth for the standard phonowell data model and persistence format. This asset defines how active assets, runtime state, generation diffs, and verification evidence must be represented.",
+      "content": "Single source of truth for the standard phonowell data model and persistence format. This asset defines how active assets, runtime state, generation diffs, and verification evidence must be represented.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/data-format-contract.md",
+      "priority": "p0",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-canon-state-versioning-contract",
+      "wellId": "well-main",
+      "type": "canonical-bundle",
+      "domain": "protocol",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "orchestrator-core",
+      "layer": "contract",
+      "title": "Canonical State Versioning Contract Asset",
+      "summary": "Single source of truth for versioning and migration of phonowell persisted state.",
+      "purpose": "Single source of truth for versioning and migration of phonowell persisted state.",
+      "content": "Single source of truth for versioning and migration of phonowell persisted state.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/state-versioning-contract.md",
+      "priority": "p0",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-canon-entity-schema-contract",
+      "wellId": "well-main",
+      "type": "canonical-bundle",
+      "domain": "protocol",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "orchestrator-core",
+      "layer": "contract",
+      "title": "Canonical Entity Schema Contract Asset",
+      "summary": "Single source of truth for explicit schemas of phonowell entities instead of validating only the top-level container.",
+      "purpose": "Single source of truth for explicit schemas of phonowell entities instead of validating only the top-level container.",
+      "content": "Single source of truth for explicit schemas of phonowell entities instead of validating only the top-level container.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/entity-schema-contract.md",
+      "priority": "p0",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-canon-relation-semantics-contract",
+      "wellId": "well-main",
+      "type": "canonical-bundle",
+      "domain": "protocol",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "orchestrator-core",
+      "layer": "contract",
+      "title": "Canonical Relation Semantics Contract Asset",
+      "summary": "Single source of truth for a tighter and more explicit relation vocabulary inside the phonowell asset graph.",
+      "purpose": "Single source of truth for a tighter and more explicit relation vocabulary inside the phonowell asset graph.",
+      "content": "Single source of truth for a tighter and more explicit relation vocabulary inside the phonowell asset graph.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/relation-semantics-contract.md",
+      "priority": "p0",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-canon-workdir-contract",
+      "wellId": "well-main",
+      "type": "canonical-bundle",
+      "domain": "protocol",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "orchestrator-core",
+      "layer": "contract",
+      "title": "Canonical Workdir Contract Asset",
+      "summary": "Single source of truth that the default phonowell project work directory is `.phonowell`.",
+      "purpose": "Single source of truth that the default phonowell project work directory is `.phonowell`.",
+      "content": "Single source of truth that the default phonowell project work directory is `.phonowell`.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/workdir-contract.md",
+      "priority": "p0",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-canon-project-layer",
+      "wellId": "well-main",
+      "type": "canonical-bundle",
+      "domain": "delivery",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "delivery-core",
+      "layer": "contract",
+      "title": "Canonical Project Layer Asset",
+      "summary": "Single source of truth for introducing a `project` layer above wells so users can manage multiple phonowell projects.",
+      "purpose": "Single source of truth for introducing a `project` layer above wells so users can manage multiple phonowell projects.",
+      "content": "Single source of truth for introducing a `project` layer above wells so users can manage multiple phonowell projects.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/project-layer.md",
+      "priority": "p0",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-canon-generator-diff-contract",
+      "wellId": "well-main",
+      "type": "canonical-bundle",
+      "domain": "protocol",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "orchestrator-core",
+      "layer": "contract",
+      "title": "Canonical Generator Diff Contract Asset",
+      "summary": "Single source of truth that generation must consume asset-management diffs so the generator updates existing artifacts incrementally instead of fully regenerating every time.",
+      "purpose": "Single source of truth that generation must consume asset-management diffs so the generator updates existing artifacts incrementally instead of fully regenerating every time.",
+      "content": "Single source of truth that generation must consume asset-management diffs so the generator updates existing artifacts incrementally instead of fully regenerating every time.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/generator-diff-contract.md",
+      "priority": "p0",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-canon-asset-layering-contract",
+      "wellId": "well-main",
+      "type": "canonical-bundle",
+      "domain": "core",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "product-core",
+      "layer": "contract",
+      "title": "Canonical Asset Layering Contract Asset",
+      "summary": "Single source of truth that active assets must distinguish hard contracts from default policy and reference guidance.",
+      "purpose": "Single source of truth that active assets must distinguish hard contracts from default policy and reference guidance.",
+      "content": "Single source of truth that active assets must distinguish hard contracts from default policy and reference guidance.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/asset-layering-contract.md",
+      "priority": "p0",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-canon-v1-delivery",
+      "wellId": "well-main",
+      "type": "canonical-bundle",
+      "domain": "delivery",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "delivery-core",
+      "layer": "contract",
+      "title": "Canonical V1 Delivery Asset",
+      "summary": "Single source of truth for V1 scope, UX, event semantics, runtime contract, and milestone.",
+      "purpose": "Single source of truth for V1 scope, UX, event semantics, runtime contract, and milestone.",
+      "content": "Single source of truth for V1 scope, UX, event semantics, runtime contract, and milestone.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/v1-delivery.md",
+      "priority": "p0",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-canon-ui-observability-contract",
+      "wellId": "well-main",
+      "type": "canonical-bundle",
+      "domain": "delivery",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "webui-core",
+      "layer": "policy",
+      "title": "Canonical UI Observability Contract Asset",
+      "summary": "Single source of truth that the WebUI must expose the key phonowell control signals instead of hiding them behind implementation internals.",
+      "purpose": "Single source of truth that the WebUI must expose the key phonowell control signals instead of hiding them behind implementation internals.",
+      "content": "Single source of truth that the WebUI must expose the key phonowell control signals instead of hiding them behind implementation internals.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/ui-observability-contract.md",
+      "priority": "p0",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-ref-mimikit-openai-llm",
+      "wellId": "well-main",
+      "type": "reference-project",
+      "domain": "reference",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "architecture-core",
+      "layer": "reference",
+      "title": "Mimikit Reference Asset",
+      "summary": "Reference source for proven orchestration and OpenAI/LLM interaction patterns that can be reused in `phonowell` with minimal adaptation cost.",
+      "purpose": "Reference source for proven orchestration and OpenAI/LLM interaction patterns that can be reused in `phonowell` with minimal adaptation cost.",
+      "content": "Reference source for proven orchestration and OpenAI/LLM interaction patterns that can be reused in `phonowell` with minimal adaptation cost.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/references/mimikit-reference.md",
+      "priority": "p1",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-ref-react-19",
+      "wellId": "well-main",
+      "type": "reference-tech",
+      "domain": "reference",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "webui-core",
+      "layer": "reference",
+      "title": "React 19 Reference Asset",
+      "summary": "Reference baseline for implementing the WebUI graph interaction layer with stable, mature React capabilities and minimal custom uncertainty.",
+      "purpose": "Reference baseline for implementing the WebUI graph interaction layer with stable, mature React capabilities and minimal custom uncertainty.",
+      "content": "Reference baseline for implementing the WebUI graph interaction layer with stable, mature React capabilities and minimal custom uncertainty.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/references/react-19-reference.md",
+      "priority": "p1",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-ref-codex",
+      "wellId": "well-main",
+      "type": "reference-tool",
+      "domain": "reference",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "orchestrator-core",
+      "layer": "reference",
+      "title": "Codex Reference Asset",
+      "summary": "Reference tool pattern for fast implementation and verification loops while keeping `phonowell` core model vendor-neutral.",
+      "purpose": "Reference tool pattern for fast implementation and verification loops while keeping `phonowell` core model vendor-neutral.",
+      "content": "Reference tool pattern for fast implementation and verification loops while keeping `phonowell` core model vendor-neutral.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/references/codex-reference.md",
+      "priority": "p1",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-ref-visualization-first",
+      "wellId": "well-main",
+      "type": "reference-principle",
+      "domain": "reference",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "ux-core",
+      "layer": "reference",
+      "title": "Visualization-First Reference Asset",
+      "summary": "Reference principle to prioritize visual expression over verbose text for understanding project structure and decisions.",
+      "purpose": "Reference principle to prioritize visual expression over verbose text for understanding project structure and decisions.",
+      "content": "Reference principle to prioritize visual expression over verbose text for understanding project structure and decisions.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/references/visualization-reference.md",
+      "priority": "p1",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "dropId": "drop-ref-engineering-execution",
+      "wellId": "well-main",
+      "type": "reference-engineering",
+      "domain": "reference",
+      "scope": "well-global",
+      "source": "docs",
+      "owner": "engineering-core",
+      "layer": "reference",
+      "title": "Engineering Execution Reference Asset",
+      "summary": "Unified engineering execution reference to keep delivery deterministic, low-friction, and non-blocking for users.",
+      "purpose": "Unified engineering execution reference to keep delivery deterministic, low-friction, and non-blocking for users.",
+      "content": "Unified engineering execution reference to keep delivery deterministic, low-friction, and non-blocking for users.",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/references/engineering-execution-reference.md",
+      "priority": "p0",
+      "confidence": 0.95,
+      "licenseState": "known",
+      "createdAt": "2026-03-09T08:05:35.916Z",
+      "updatedAt": "2026-03-09T08:05:35.916Z"
+    }
+  ],
+  "relations": [
+    {
+      "relationId": "rel-e607b336",
+      "wellId": "well-main",
+      "fromDropId": "drop-canon-core-foundation",
+      "toDropId": "drop-canon-execution-protocol",
+      "relationType": "constrains",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-71958e62",
+      "wellId": "well-main",
+      "fromDropId": "drop-canon-core-foundation",
+      "toDropId": "drop-canon-acceptance-contract",
+      "relationType": "constrains",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-130852d0",
+      "wellId": "well-main",
+      "fromDropId": "drop-canon-core-foundation",
+      "toDropId": "drop-canon-v1-delivery",
+      "relationType": "constrains",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-d9881f74",
+      "wellId": "well-main",
+      "fromDropId": "drop-canon-acceptance-contract",
+      "toDropId": "drop-canon-execution-protocol",
+      "relationType": "constrains",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-e4acc903",
+      "wellId": "well-main",
+      "fromDropId": "drop-canon-acceptance-contract",
+      "toDropId": "drop-canon-v1-delivery",
+      "relationType": "constrains",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-f7b3fe78",
+      "wellId": "well-main",
+      "fromDropId": "drop-canon-execution-protocol",
+      "toDropId": "drop-canon-v1-delivery",
+      "relationType": "supports",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-6fe1fd18",
+      "wellId": "well-main",
+      "fromDropId": "drop-canon-execution-protocol",
+      "toDropId": "drop-canon-v1-delivery",
+      "relationType": "constrains",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-2ca825dc",
+      "wellId": "well-main",
+      "fromDropId": "drop-canon-data-format-contract",
+      "toDropId": "drop-canon-state-versioning-contract",
+      "relationType": "constrains",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-e5dbe30c",
+      "wellId": "well-main",
+      "fromDropId": "drop-canon-data-format-contract",
+      "toDropId": "drop-canon-entity-schema-contract",
+      "relationType": "derives",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-3cf3aa38",
+      "wellId": "well-main",
+      "fromDropId": "drop-canon-state-versioning-contract",
+      "toDropId": "drop-canon-workdir-contract",
+      "relationType": "constrains",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-07972eb6",
+      "wellId": "well-main",
+      "fromDropId": "drop-canon-project-layer",
+      "toDropId": "drop-canon-workdir-contract",
+      "relationType": "implements",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-78494f29",
+      "wellId": "well-main",
+      "fromDropId": "drop-canon-generator-diff-contract",
+      "toDropId": "drop-canon-v1-delivery",
+      "relationType": "constrains",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-cd0fb8f2",
+      "wellId": "well-main",
+      "fromDropId": "drop-canon-asset-layering-contract",
+      "toDropId": "drop-canon-ui-observability-contract",
+      "relationType": "constrains",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-6af6a3a6",
+      "wellId": "well-main",
+      "fromDropId": "drop-canon-relation-semantics-contract",
+      "toDropId": "drop-canon-ui-observability-contract",
+      "relationType": "constrains",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-1a0ef6c5",
+      "wellId": "well-main",
+      "fromDropId": "drop-canon-ui-observability-contract",
+      "toDropId": "drop-canon-v1-delivery",
+      "relationType": "implements",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-2f4e6840",
+      "wellId": "well-main",
+      "fromDropId": "drop-ref-mimikit-openai-llm",
+      "toDropId": "drop-canon-v1-delivery",
+      "relationType": "references",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-6a193b2b",
+      "wellId": "well-main",
+      "fromDropId": "drop-ref-react-19",
+      "toDropId": "drop-canon-v1-delivery",
+      "relationType": "references",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-b094e849",
+      "wellId": "well-main",
+      "fromDropId": "drop-ref-codex",
+      "toDropId": "drop-canon-execution-protocol",
+      "relationType": "references",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-7b33392f",
+      "wellId": "well-main",
+      "fromDropId": "drop-ref-codex",
+      "toDropId": "drop-canon-v1-delivery",
+      "relationType": "references",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-6fc47bcd",
+      "wellId": "well-main",
+      "fromDropId": "drop-ref-visualization-first",
+      "toDropId": "drop-canon-v1-delivery",
+      "relationType": "references",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-e7e09519",
+      "wellId": "well-main",
+      "fromDropId": "drop-ref-engineering-execution",
+      "toDropId": "drop-canon-execution-protocol",
+      "relationType": "references",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-899eaaeb",
+      "wellId": "well-main",
+      "fromDropId": "drop-ref-engineering-execution",
+      "toDropId": "drop-canon-v1-delivery",
+      "relationType": "references",
+      "createdAt": "2026-03-09T08:05:35.916Z"
+    },
+    {
+      "relationId": "rel-fc444725",
+      "wellId": "well-main",
+      "fromDropId": "drop-goal-origin-910b3118",
+      "toDropId": "drop-canon-v1-delivery",
+      "relationType": "constrains",
+      "createdAt": "2026-03-09T08:05:35.922Z"
+    },
+    {
+      "relationId": "rel-d87de63e",
+      "wellId": "well-main",
+      "fromDropId": "drop-goal-origin-910b3118",
+      "toDropId": "drop-canon-legacy-archive-boundary",
+      "relationType": "supports",
+      "createdAt": "2026-03-09T08:05:35.922Z"
+    },
+    {
+      "relationId": "rel-c75724a7",
+      "wellId": "well-main",
+      "fromDropId": "drop-goal-origin-910b3118",
+      "toDropId": "drop-a4cff594",
+      "relationType": "supports",
+      "createdAt": "2026-03-09T08:05:35.922Z"
+    }
+  ],
+  "candidates": [],
+  "verifyReports": [],
+  "verifyCycles": [],
+  "selfIterationRecords": [],
+  "packetRecords": [],
+  "pendingChangedDropIds": [
+    "drop-goal-origin-910b3118",
+    "drop-a4cff594"
+  ],
+  "runLogs": [
+    {
+      "runId": "run-89605378",
+      "stage": "dry-run",
+      "status": "fail",
+      "summary": "auto-flow.completed:goal.origin.generated",
+      "payload": {
+        "trigger": "goal.origin.generated",
+        "gateResult": "fail"
+      },
+      "createdAt": "2026-03-09T08:05:35.923Z"
+    },
+    {
+      "runId": "run-2c83c8c7",
+      "stage": "dry-run",
+      "status": "fail",
+      "summary": "dry-run fail",
+      "payload": {
+        "checkTotal": 9,
+        "passCount": 7,
+        "warnCount": 1,
+        "failCount": 1,
+        "criticalWarnCount": 0,
+        "criticalFailCount": 1,
+        "highConflictCount": 0,
+        "missingRequiredCapabilityCount": 0,
+        "acceptanceUnboundCount": 0,
+        "acceptanceUncheckableCount": 0,
+        "selfIterationEvidencePathMissingCount": 1,
+        "assetUnclearCount": 0,
+        "assetMissingPurposeCount": 0,
+        "assetOrphanCount": 0,
+        "designOverlapCount": 0,
+        "designContradictionCount": 0,
+        "designRedundancyCount": 0,
+        "designErrorCount": 0,
+        "designLowRoiCount": 0,
+        "gateResult": "fail",
+        "gateReason": "Fail condition hit in quantified gate thresholds.",
+        "checks": [
+          {
+            "name": "closure",
+            "critical": true,
+            "status": "fail",
+            "evidence": [
+              "goal-origin=drop-goal-origin-910b3118",
+              "definition-of-done=4"
+            ]
+          },
+          {
+            "name": "acceptance",
+            "critical": false,
+            "status": "pass",
+            "evidence": [
+              "acceptance-bound=true",
+              "acceptance-uncheckable=0"
+            ]
+          },
+          {
+            "name": "self-iteration",
+            "critical": false,
+            "status": "warn",
+            "evidence": [
+              "self-iteration-evidence-missing=1"
+            ]
+          },
+          {
+            "name": "completeness",
+            "critical": true,
+            "status": "pass",
+            "evidence": [
+              "asset-orphan-count=0"
+            ]
+          },
+          {
+            "name": "conflict",
+            "critical": true,
+            "status": "pass",
+            "evidence": [
+              "unresolved-questions=0"
+            ]
+          },
+          {
+            "name": "reuse-first",
+            "critical": false,
+            "status": "pass",
+            "evidence": [
+              "reference-drop-count=5"
+            ]
+          },
+          {
+            "name": "reverse-validation",
+            "critical": false,
+            "status": "pass",
+            "evidence": [
+              "dod-items=4"
+            ]
+          },
+          {
+            "name": "asset-clarity",
+            "critical": false,
+            "status": "pass",
+            "evidence": [
+              "asset-unclear-count=0",
+              "asset-missing-purpose-count=0",
+              "asset-orphan-count=0"
+            ]
+          },
+          {
+            "name": "design-health",
+            "critical": false,
+            "status": "pass",
+            "evidence": [
+              "design-overlap-count=0",
+              "design-contradiction-count=0",
+              "design-redundancy-count=0",
+              "design-error-count=0",
+              "design-low-roi-count=0"
+            ]
+          }
+        ],
+        "createdAt": "2026-03-09T08:05:35.923Z"
+      },
+      "createdAt": "2026-03-09T08:05:35.923Z"
+    },
+    {
+      "runId": "run-7d832106",
+      "stage": "verify",
+      "status": "warn",
+      "summary": "micro-lifecycle-updated",
+      "payload": {
+        "promoted": [],
+        "archived": [],
+        "untouched": [
+          "drop-a4cff594"
+        ],
+        "createdAt": "2026-03-09T08:05:35.922Z"
+      },
+      "createdAt": "2026-03-09T08:05:35.922Z"
+    },
+    {
+      "runId": "run-9ae8bc81",
+      "stage": "gap-fill",
+      "status": "pass",
+      "summary": "gap-check.completed",
+      "payload": {
+        "gapFilled": false
+      },
+      "createdAt": "2026-03-09T08:05:35.922Z"
+    },
+    {
+      "runId": "run-5496fa7a",
+      "stage": "organize",
+      "status": "pass",
+      "summary": "organize.completed",
+      "payload": {
+        "relationCount": 25
+      },
+      "createdAt": "2026-03-09T08:05:35.922Z"
+    },
+    {
+      "runId": "run-69ad064c",
+      "stage": "analyze",
+      "status": "pass",
+      "summary": "analyze.completed",
+      "payload": {
+        "activeDropCount": 21
+      },
+      "createdAt": "2026-03-09T08:05:35.922Z"
+    },
+    {
+      "runId": "run-0f6ee453",
+      "stage": "conflict",
+      "status": "pass",
+      "summary": "conflict.annotated",
+      "payload": {
+        "questions": []
+      },
+      "createdAt": "2026-03-09T08:05:35.922Z"
+    },
+    {
+      "runId": "run-55651050",
+      "stage": "modeling",
+      "status": "pass",
+      "summary": "intent.hypothesis.updated",
+      "payload": {
+        "hypothesisDropId": "drop-a4cff594"
+      },
+      "createdAt": "2026-03-09T08:05:35.922Z"
+    },
+    {
+      "runId": "run-46d73953",
+      "stage": "dry-run",
+      "status": "warn",
+      "summary": "goal.origin.generated",
+      "payload": {
+        "goalDropId": "drop-goal-origin-910b3118"
+      },
+      "createdAt": "2026-03-09T08:05:35.922Z"
+    }
+  ],
+  "unresolvedQuestions": []
+}

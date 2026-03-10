@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phonowell.dev/schemas/packet-record.schema.json",
+  "title": "Phonowell Packet Record",
+  "type": "object",
+  "required": ["packetId", "stage", "request", "response", "createdAt"],
+  "properties": {
+    "packetId": { "type": "string" },
+    "stage": { "type": "string", "enum": ["analyze", "gap-fill", "generate", "verify"] },
+    "request": {
+      "type": "object",
+      "required": ["packetId", "stage", "instruction", "context", "createdAt"],
+      "properties": {
+        "packetId": { "type": "string" },
+        "stage": { "type": "string", "enum": ["analyze", "gap-fill", "generate", "verify"] },
+        "instruction": { "type": "string" },
+        "context": { "type": "object" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "response": {
+      "type": "object",
+      "required": ["packetId", "stage", "provider", "model", "usedFallback", "outputSource", "summary", "outputText", "evidence", "createdAt"],
+      "properties": {
+        "packetId": { "type": "string" },
+        "stage": { "type": "string", "enum": ["analyze", "gap-fill", "generate", "verify"] },
+        "provider": { "type": "string" },
+        "model": { "type": "string" },
+        "usedFallback": { "type": "boolean" },
+        "outputSource": { "type": "string", "enum": ["model", "fallback"] },
+        "summary": { "type": "string" },
+        "outputText": { "type": "string" },
+        "artifactContent": { "type": "string" },
+        "verifyIssues": { "type": "array", "items": { "type": "string" } },
+        "verifySuggestions": { "type": "array", "items": { "type": "string" } },
+        "structured": {
+          "type": "object",
+          "properties": {
+            "summary": { "type": "string" },
+            "artifactContent": { "type": "string" },
+            "issues": { "type": "array", "items": { "type": "string" } },
+            "suggestions": { "type": "array", "items": { "type": "string" } },
+            "changedDropIds": { "type": "array", "items": { "type": "string" } },
+            "acceptanceCoverageDropIds": { "type": "array", "items": { "type": "string" } },
+            "assetPatches": { "type": "array", "items": { "type": "object" } },
+            "relationPatches": { "type": "array", "items": { "type": "object" } },
+            "outputSource": { "type": "string", "enum": ["model", "fallback"] },
+            "provenanceNotes": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "evidence": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "createdAt": { "type": "string" }
+  }
+}

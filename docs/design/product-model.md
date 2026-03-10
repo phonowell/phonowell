@@ -96,8 +96,9 @@ Optional fields:
 - Persistent high blast radius triggers asset repartition.
 - Core decisions must rely on `domain + scope`, not `tags`.
 - Low cognitive load is default: user action count should be minimized.
-- verify routing and priority lifecycle are AI-owned by default with user override.
-- override trigger hit only marks and escalates; it does not block editing and does not force auto-resolution.
+- verify routing is executed by default and recorded with route execution evidence.
+- priority lifecycle recommendations now write back state when confidence is acceptable; deferred updates are recorded as override-required audits.
+- override trigger hit records audit evidence and does not block editing.
 - micro assets must follow candidate -> promoted -> archived lifecycle managed by AI by default.
 - generation requires explicit dry-run and reverse validation record.
 - generation defaults to minimal output and reuse-first asset selection.

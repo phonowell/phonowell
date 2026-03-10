@@ -1,13 +1,15 @@
+---
+dropId: drop-ref-codex
+type: reference-tool
+domain: reference
+scope: well-global
+owner: orchestrator-core
+layer: reference
+priority: p1
+title: Codex Reference Asset
+active: true
+---
 # Codex Reference Asset
-
-## Asset Metadata
-
-- `drop-id`: `drop-ref-codex`
-- `type`: `reference-tool`
-- `domain`: `reference`
-- `scope`: `well-global`
-- `owner`: `orchestrator-core`
-- `priority`: `p1`
 
 ## Purpose
 

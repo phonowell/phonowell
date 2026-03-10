@@ -1,13 +1,15 @@
+---
+dropId: drop-canon-execution-protocol
+type: canonical-bundle
+domain: protocol
+scope: well-global
+owner: orchestrator-core
+layer: contract
+priority: p0
+title: Canonical Execution Protocol Asset
+active: true
+---
 # Canonical Execution Protocol Asset
-
-## Asset Metadata
-
-- `drop-id`: `drop-canon-execution-protocol`
-- `type`: `canonical-bundle`
-- `domain`: `protocol`
-- `scope`: `well-global`
-- `owner`: `orchestrator-core`
-- `priority`: `p0`
 
 ## Purpose
 
@@ -21,7 +23,7 @@ Single source of truth for how chat signals become executable asset graph state.
 2. Immediate Ingest (Non-Blocking)
 - commit incoming drops immediately after intake
 - ensure each new drop is visible in graph/UI before deeper analysis
-- assign provisional metadata (`scope`, `domain`, `priority`) with AI defaults
+- assign provisional metadata (`scope`, `domain`, `priority`) with explicit heuristic defaults unless a model-assisted path is separately recorded
 
 3. First-Principles Modeling
 - decompose objective/constraints/success/non-goals
@@ -86,7 +88,7 @@ Dry-run detail rules (V1):
 - generate stage is execution-only and must not ask new user questions
 
 8. AI Verify Routing
-- AI decides the next step after verify: back to `gap-check`, `analyze`, or direct regenerate
+- system decides the next step after verify: back to `gap-check`, `analyze`, or controlled regenerate
 - route decision must be evidence-backed and visible in run report
 - verify pass requires acceptance coverage evidence linked to `drop-canon-acceptance-contract`
 - verify pass requires at least one self-iteration evidence packet when self-management is in acceptance scope
@@ -97,9 +99,10 @@ Dry-run detail rules (V1):
 - route selects custom build while mature reusable option exists without evidence
 
 9. AI Priority Lifecycle
-- AI can raise/lower `priority` (`p0|p1|p2`) after each verify cycle
+- system can raise/lower `priority` (`p0|p1|p2`) after each verify cycle when evidence threshold is met
 - updates are based on impact to goal-origin and current risk
 - users can override AI-priority decisions
+- deferred lifecycle updates must record override-required reason
 - user override is triggered when any of the following is true:
 - AI promotes more than `2` drops to `p0` in one verify cycle
 - AI demotes a drop that is upstream of unresolved `fail` items
@@ -116,6 +119,7 @@ Dry-run detail rules (V1):
 
 - default user actions stay minimal (`drop`, `connect`, `confirm`)
 - AI handles summarization, organization, and most re-evaluation
+- heuristics may handle summarization, organization, and re-evaluation when no model-assisted evidence is available
 - UI exposes only essential controls in default mode
 
 ## Parallel Delivery Strategy

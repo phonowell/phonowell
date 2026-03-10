@@ -2,88 +2,97 @@
 
 Drop everything in. Make a wish. Let it resonate into one artifact.
 
-## Brand Promise
+## What We Are Building
 
-You make a wish. We make it real.
+`phonowell` is a local workbench for turning scattered input into one deliverable artifact.
+It manages active assets in `.phonowell`, mixes explicit runtime steps with bounded heuristics, and keeps generation incremental.
 
-## What It Is
+User-facing actions are explicit:
 
-`phonowell` is an asset-first AI orchestration project.
-A project is a single well. You drop fragmented resources into it, define one wish, and AI helps converge toward one final artifact.
+- `drop`
+- `connect`
+- `organize`
+- `preflight`
+- `generate`
+- `verify`
 
-## Canonical Asset Set
+System loops are explicit or queued with audit trails:
 
-To keep granularity healthy and blast radius low, active assets are partitioned by `domain + scope`:
+- `POST /api/deep-organize` runs packet-backed `analyze -> apply -> gap-fill -> apply`
+- `POST /api/dry-run` runs the quantified preflight gate
+- `POST /api/generate` produces an incremental candidate from the latest generation diff without mutating assets or relations
+- `POST /api/verify` verifies acceptance coverage, records changed-drop -> acceptance-item -> evidence mapping, executes the selected next route, and audits priority lifecycle updates
+- `POST /api/conversations` records the user message and writes back an analysis reply. It does not mutate the asset graph, unresolved questions, run logs, or packet/proposal state.
+- `POST /api/drops` returns immediately, then queues post-ingest automation for summary/metadata/relation/conflict/preflight refresh with explicit heuristic/system-rule provenance and confidence-scoped decisions
 
-1. [Core Foundation](./docs/assets/canonical/core-foundation.md)
-2. [Acceptance Contract](./docs/assets/canonical/acceptance-contract.md)
-3. [Execution Protocol](./docs/assets/canonical/execution-protocol.md)
-4. [V1 Delivery](./docs/assets/canonical/v1-delivery.md)
+## Run
 
-Reference assets:
+```bash
+pnpm install
+pnpm run dev
+```
 
-- [Mimikit Reference](./docs/assets/references/mimikit-reference.md)
-- [React 19 Reference](./docs/assets/references/react-19-reference.md)
-- [Codex Reference](./docs/assets/references/codex-reference.md)
-- [Visualization-First Reference](./docs/assets/references/visualization-reference.md)
-- [Engineering Execution Reference](./docs/assets/references/engineering-execution-reference.md)
+Open `http://localhost:8787`.
 
-Registry:
+## Commands
 
-- [Asset Registry](./docs/assets/asset-registry.md)
+```bash
+pnpm run build
+pnpm run dry-run
+pnpm run coverage
+pnpm run core-gate
+pnpm run core-gate:offline
+pnpm run import:assets
+```
 
-Legacy fine-grained assets are archived under:
+## Core API
 
-- [Legacy Asset Set](./docs/assets/legacy/README.md)
+- `GET /api/state`
+- `GET /api/projects`
+- `POST /api/projects`
+- `PUT /api/projects/:slug`
+- `DELETE /api/projects/:slug`
+- `POST /api/drops`
+- `POST /api/relations`
+- `POST /api/goal/draft`
+- `PUT /api/goal`
+- `POST /api/deep-organize`
+- `POST /api/dry-run`
+- `POST /api/conversations`
+- `POST /api/generate`
+- `POST /api/verify`
+- `GET /api/observability`
+- `POST /api/import-assets`
 
-## Model Rule
+## Debug API
 
-- `domain + scope` are governance fields and must be explicit
-- `priority` (`p0|p1|p2`) marks importance and execution order
-- `tags` are optional for search/display only, not governance input
+Enable with `PHONOWELL_ENABLE_DEBUG_API=1` when you need low-level runtime controls:
 
-## Micro Asset Rule
+- `POST /api/auto-flow`
+- `POST /api/cycle`
+- `GET /api/packets`
+- `POST /api/packets/:stage`
+- `GET /api/proposals`
+- `POST /api/proposals/:id/apply`
+- `POST /api/proposals/:id/reject`
 
-- small generated assets default to `run-local` + `p2`
-- AI handles candidate/promote/archive lifecycle by default
-- only promoted assets enter persistent active graph
+## Runtime Notes
 
-## Human-Centered Principle
+- workdir root is `.phonowell`
+- active runtime is project-scoped: `.phonowell/projects/<slug>/state.json`
+- active assets only; legacy is archive-only
+- packet runtime uses local Codex SDK auth/config from `~/.codex`
+- `pnpm run core-gate` uses the normal runtime path
+- `pnpm run core-gate:offline` is the stable fallback and forces `PHONOWELL_DISABLE_CODEX_RUNTIME=1`
+- generate is diff-driven and defaults to incremental update when a prior candidate exists
+- packet responses are stored as structured runtime records and always mark whether output came from `model` or `fallback`
+- post-ingest automation records every applied/deferred decision in `automationTasks`, including `source`, `confidence`, and applied/deferred reason
 
-- default to low cognitive load
-- humans are not suited for managing complex projects directly
-- AI should absorb complexity and keep user actions minimal
-- preserving user flow continuity is mandatory; drop/edit/connect should stay non-blocking
+## Canonical Asset Sources
 
-## Delivery Default
+- [Core Foundation](./docs/assets/canonical/core-foundation.md)
+- [Acceptance Contract](./docs/assets/canonical/acceptance-contract.md)
+- [Execution Protocol](./docs/assets/canonical/execution-protocol.md)
+- [V1 Delivery](./docs/assets/canonical/v1-delivery.md)
 
-- generate minimal viable artifacts by default
-- prefer mature existing assets/libraries/tools before from-scratch builds
-- use reuse-first to reduce uncertainty
-- prioritize visual expression for structure/status communication
-- engineering execution baseline: TypeScript + tsx direct run + code-first uncertainty reduction + no-question-in-generate
-
-## High-Level Flow
-
-1. Confirm goal-origin.
-2. Capture intent and ingest assets immediately (visible first, non-blocking).
-3. Model by first principles, then annotate conflicts and refine minimal asset set.
-4. Assign priority and execute `p0 -> p1 -> p2` with reuse-first selection.
-5. Run explicit dry-run preflight (`pass|warn|fail`).
- - quantified rule (V1): `fail-count>=1 => fail`; no fail + critical warnings or >=2 warnings => `warn`; otherwise `pass`
- - must have explicit acceptance contract with checkable acceptance items
- - must close all unresolved user-facing questions before generate
- - must confirm all active assets have clear content/purpose/relation mapping
- - must detect overlap/contradiction/redundancy/error/low-ROI design issues
-6. Run reverse validation with sharp questions and boundary cases.
-7. Generate and verify one artifact.
- - generate stage is execution-only and should not ask user questions
- - verify pass requires acceptance coverage evidence linked to acceptance contract asset
- - for phonowell itself, acceptance includes self-iteration/self-management evidence
-8. AI routes retry path and priority updates by default.
- - trigger hit (`route loop`, `stage bypass`, `unsupported priority flip`, `evidence missing`) => must request user override decision
-
-## Scope Boundary
-
-`phonowell` is an orchestration layer, not an execution runtime.
-Execution should be delegated to external runtimes/tools.
+This implementation now works against active assets only and treats runtime packets as first-class execution records.

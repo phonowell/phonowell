@@ -1,13 +1,15 @@
+---
+dropId: drop-ref-engineering-execution
+type: reference-engineering
+domain: reference
+scope: well-global
+owner: engineering-core
+layer: reference
+priority: p0
+title: Engineering Execution Reference Asset
+active: true
+---
 # Engineering Execution Reference Asset
-
-## Asset Metadata
-
-- `drop-id`: `drop-ref-engineering-execution`
-- `type`: `reference-engineering`
-- `domain`: `reference`
-- `scope`: `well-global`
-- `owner`: `engineering-core`
-- `priority`: `p0`
 
 ## Purpose
 

@@ -1,0 +1,798 @@
+{
+  "schemaVersion": "1.0.0",
+  "compiledAt": "2026-03-10T01:30:34.599Z",
+  "assetCount": 19,
+  "assets": [
+    {
+      "dropId": "drop-canon-core-foundation",
+      "title": "Canonical Core Foundation Asset",
+      "domain": "core",
+      "layer": "contract",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/core-foundation.md",
+      "purpose": "Single source of truth for product identity and reasoning constraints. This bundle replaces multiple fragmented principle assets.",
+      "contractLines": [
+        "1. Brand Story",
+        "- `phonowell`: drop assets in, make one wish, get one artifact",
+        "- promise: `You make a wish. We make it real.`",
+        "2. Product Philosophy",
+        "- assets are first-class",
+        "- explicit structure over hidden context",
+        "- one project serves one artifact",
+        "3. Goal-Origin Rule",
+        "- each well has exactly one `goal-origin` asset",
+        "- AI drafts it, user can edit and confirm",
+        "4. First-Principles Rule",
+        "- user wording is signal, not always final intent",
+        "- intent hypotheses stay explicit until convergence",
+        "5. Granularity Rule",
+        "- keep blast radius low",
+        "- repeated high blast radius triggers asset partition refactor",
+        "6. Low Cognitive Load Rule",
+        "- humans are not good at managing high project complexity directly",
+        "- system should absorb complexity and keep user interaction minimal",
+        "- user flow continuity is mandatory: ingest and basic editing must stay smooth and non-blocking",
+        "7. Minimal + Reuse-First Rule",
+        "- generated artifacts should be minimal by default",
+        "- prefer mature existing assets/libraries/tools before custom from-scratch implementation",
+        "- reduce uncertainty by maximizing proven components",
+        "8. Acceptance-First Rule",
+        "- artifact acceptance conditions are first-class assets",
+        "- acceptance contract must be explicit before verify can pass"
+      ],
+      "guardrailLines": [
+        "- no hidden decisions outside asset graph",
+        "- no generation before confirmed goal-origin",
+        "- no verify pass without explicit acceptance contract coverage",
+        "- no persistent high-coupling asset structure",
+        "- no unnecessary user-facing complexity",
+        "- no workflow step should block normal drop/edit/connect actions unless generation safety requires it",
+        "- no default from-scratch implementation when mature alternatives exist"
+      ],
+      "keywords": [
+        "phonowell",
+        "You make a wish. We make it real.",
+        "goal-origin"
+      ],
+      "evidenceRequirements": [
+        "project-layer",
+        "verify-loop",
+        "goal-origin",
+        "acceptance-binding"
+      ]
+    },
+    {
+      "dropId": "drop-canon-legacy-archive-boundary",
+      "title": "Canonical Legacy Archive Boundary Asset",
+      "domain": "core",
+      "layer": "contract",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/legacy-archive-boundary.md",
+      "purpose": "Single source of truth that `legacy` assets are archive-only and must not participate in active runtime execution.",
+      "contractLines": [
+        "1. `legacy` is archive-only",
+        "- legacy assets exist only for historical traceability",
+        "- legacy assets must not be loaded into active runtime state",
+        "- legacy assets must not be counted in active coverage or gate decisions",
+        "2. active-first runtime",
+        "- runtime catalog, orchestration state, and UI default views use active assets only",
+        "- any replayed persisted state must filter out legacy drops and legacy relations"
+      ],
+      "guardrailLines": [
+        "- no generation based on legacy assets",
+        "- no verify evidence sourced from legacy assets",
+        "- no UI default surface should show legacy assets as active choices"
+      ],
+      "keywords": [
+        "legacy"
+      ],
+      "evidenceRequirements": [
+        "relation-graph",
+        "webui-surface",
+        "verify-loop",
+        "legacy-boundary"
+      ]
+    },
+    {
+      "dropId": "drop-canon-acceptance-contract",
+      "title": "Canonical Acceptance Contract Asset",
+      "domain": "core",
+      "layer": "contract",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/acceptance-contract.md",
+      "purpose": "Single source of truth for artifact acceptance conditions. This asset defines what \"done\" means and what must be verified before release.",
+      "contractLines": [],
+      "guardrailLines": [
+        "- no release candidate without explicit acceptance contract link",
+        "- no verify pass without acceptance coverage evidence",
+        "- no hidden acceptance criteria outside asset graph"
+      ],
+      "keywords": [],
+      "evidenceRequirements": [
+        "verify-loop",
+        "acceptance-binding"
+      ]
+    },
+    {
+      "dropId": "drop-canon-execution-protocol",
+      "title": "Canonical Execution Protocol Asset",
+      "domain": "protocol",
+      "layer": "contract",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/execution-protocol.md",
+      "purpose": "Single source of truth for how chat signals become executable asset graph state.",
+      "contractLines": [
+        "1. Chat Intake",
+        "- collect intent fragments, constraints, and references",
+        "2. Immediate Ingest (Non-Blocking)",
+        "- commit incoming drops immediately after intake",
+        "- ensure each new drop is visible in graph/UI before deeper analysis",
+        "- assign provisional metadata (`scope`, `domain`, `priority`) with explicit heuristic defaults unless a model-assisted path is separately recorded",
+        "3. First-Principles Modeling",
+        "- decompose objective/constraints/success/non-goals",
+        "- generate intent hypotheses and uncertainty flags",
+        "4. Minimal Commit",
+        "- commit only high-ROI assets",
+        "- merge redundant candidates",
+        "- assign `priority` (`p0|p1|p2`) with default `p1`",
+        "- prefer mature reusable assets before introducing custom build assets",
+        "- prefer deterministic code implementation to reduce uncertainty; delegate only LLM-only tasks to LLM",
+        "5. Conflict Annotation",
+        "- detect and annotate conflicts after commit",
+        "- do not block normal editing by default",
+        "6. Explicit Dry-Run Gate",
+        "- run a mandatory pre-generation dry run",
+        "- output gate result: `pass | warn | fail`",
+        "- if `fail`, generation is blocked until issues are re-routed and updated",
+        "- if `warn`, generation can continue with explicit visibility",
+        "- all unresolved user-facing questions must be closed in dry-run before entering generate",
+        "Dry-run quantified thresholds (V1):",
+        "- check set size: `9` (`closure`, `acceptance`, `self-iteration`, `completeness`, `conflict`, `reuse-first`, `reverse-validation`, `asset-clarity`, `design-health`)",
+        "- critical checks: `closure`, `completeness`, `conflict`",
+        "- per-check status: `pass | warn | fail`",
+        "- `pass`: `fail-count=0` and `critical-warn-count=0` and `warn-count<=1`",
+        "- `warn`: `fail-count=0` and (`critical-warn-count>=1` or `warn-count>=2`)",
+        "- `fail`: `fail-count>=1` or `critical-fail-count>=1` or `high-conflict-count>=1` or `missing-required-capability-count>=1`",
+        "Dry-run report minimum fields:",
+        "- `check-total`, `pass-count`, `warn-count`, `fail-count`",
+        "- `critical-warn-count`, `critical-fail-count`",
+        "- `high-conflict-count`, `missing-required-capability-count`",
+        "- `acceptance-unbound-count`, `acceptance-uncheckable-count`, `self-iteration-evidence-path-missing-count`",
+        "- `asset-unclear-count`, `asset-missing-purpose-count`, `asset-orphan-count`",
+        "- `design-overlap-count`, `design-contradiction-count`, `design-redundancy-count`, `design-error-count`, `design-low-roi-count`",
+        "- `gate-result`, `gate-reason`",
+        "Dry-run checklist:",
+        "- closure check: goal-origin -> required capabilities -> candidate execution path",
+        "- acceptance check: acceptance contract bound and each acceptance item is checkable",
+        "- self-iteration check: self-management acceptance evidence paths are defined and runnable",
+        "- completeness check: required assets and critical links present",
+        "- conflict check: unresolved contradictions and severity",
+        "- reuse-first check: mature alternatives evaluated before custom implementation",
+        "- reverse validation: adversarial questions + boundary cases + failure-mode probes",
+        "- asset-clarity check: all active assets have clear `content`, `purpose`, and at least one explicit relation path",
+        "- design-health check: detect overlap, contradiction, redundancy, obvious errors, and low-ROI design choices",
+        "Dry-run detail rules (V1):",
+        "- `asset-clarity pass`: `asset-unclear-count=0` and `asset-missing-purpose-count=0` and `asset-orphan-count=0`",
+        "- `asset-clarity warn`: no fail but at least one unclear field with AI confidence `<0.8`",
+        "- `asset-clarity fail`: any of `asset-unclear-count>=1`, `asset-missing-purpose-count>=1`, or `asset-orphan-count>=1`",
+        "- `design-health pass`: all `design-*` issue counts are `0`",
+        "- `design-health warn`: `design-low-roi-count>=1` and no contradiction/error",
+        "- `design-health fail`: any of `design-contradiction-count>=1` or `design-error-count>=1`",
+        "7. Graph-First Execution",
+        "- planning/gap-check/generation use committed graph as source of truth",
+        "- generate stage is execution-only and must not ask new user questions",
+        "8. AI Verify Routing",
+        "- system decides the next step after verify: back to `gap-check`, `analyze`, or controlled regenerate",
+        "- route decision must be evidence-backed and visible in run report",
+        "- verify pass requires acceptance coverage evidence linked to `drop-canon-acceptance-contract`",
+        "- verify pass requires at least one self-iteration evidence packet when self-management is in acceptance scope",
+        "- user override is triggered when any of the following is true:",
+        "- AI route bypasses a mandatory stage after `fail` (`gap-check` required before regenerate)",
+        "- same route repeats for `>=2` verify cycles with no reduction in `fail-count` or `warn-count`",
+        "- route conflicts with latest explicit user goal/constraint update",
+        "- route selects custom build while mature reusable option exists without evidence",
+        "9. AI Priority Lifecycle",
+        "- system can raise/lower `priority` (`p0|p1|p2`) after each verify cycle when evidence threshold is met",
+        "- updates are based on impact to goal-origin and current risk",
+        "- users can override AI-priority decisions",
+        "- deferred lifecycle updates must record override-required reason",
+        "- user override is triggered when any of the following is true:",
+        "- AI promotes more than `2` drops to `p0` in one verify cycle",
+        "- AI demotes a drop that is upstream of unresolved `fail` items",
+        "- same drop changes priority back and forth within `2` consecutive cycles",
+        "- priority change has no evidence linked to goal impact or risk delta",
+        "10. Micro Asset Lifecycle",
+        "- new small generated assets default to `scope=run-local` and `priority=p2`",
+        "- each micro asset must attach to a parent decision via `parent-drop-id`",
+        "- AI promotes micro assets only when they block critical path, show cross-module reuse, or carry high verification risk",
+        "- non-promoted micro assets are compressed into candidate summaries and archived after milestone",
+        "- default user actions stay minimal (`drop`, `connect`, `confirm`)",
+        "- AI handles summarization, organization, and most re-evaluation",
+        "- heuristics may handle summarization, organization, and re-evaluation when no model-assisted evidence is available",
+        "- UI exposes only essential controls in default mode",
+        "`goal-origin-init -> chat-intake -> ingest -> first-principles-modeling -> conflict-annotate -> analyze -> organize -> gap-check -> dry-run -> generate -> verify`",
+        "- blast radius",
+        "- parallel throughput (completed slices per cycle)",
+        "- p0 coverage on critical path"
+      ],
+      "guardrailLines": [],
+      "keywords": [
+        "scope",
+        "domain",
+        "priority",
+        "p0|p1|p2",
+        "p1",
+        "pass | warn | fail",
+        "fail",
+        "warn",
+        "9",
+        "closure",
+        "acceptance",
+        "self-iteration",
+        "completeness",
+        "conflict",
+        "reuse-first",
+        "reverse-validation",
+        "asset-clarity",
+        "design-health",
+        "pass",
+        "fail-count=0",
+        "critical-warn-count=0",
+        "warn-count<=1",
+        "critical-warn-count>=1",
+        "warn-count>=2",
+        "fail-count>=1",
+        "critical-fail-count>=1",
+        "high-conflict-count>=1",
+        "missing-required-capability-count>=1",
+        "check-total",
+        "pass-count",
+        "warn-count",
+        "fail-count",
+        "critical-warn-count",
+        "critical-fail-count",
+        "high-conflict-count",
+        "missing-required-capability-count",
+        "acceptance-unbound-count",
+        "acceptance-uncheckable-count",
+        "self-iteration-evidence-path-missing-count",
+        "asset-unclear-count",
+        "asset-missing-purpose-count",
+        "asset-orphan-count",
+        "design-overlap-count",
+        "design-contradiction-count",
+        "design-redundancy-count",
+        "design-error-count",
+        "design-low-roi-count",
+        "gate-result",
+        "gate-reason",
+        "content",
+        "purpose",
+        "asset-clarity pass",
+        "asset-unclear-count=0",
+        "asset-missing-purpose-count=0",
+        "asset-orphan-count=0",
+        "asset-clarity warn",
+        "<0.8",
+        "asset-clarity fail",
+        "asset-unclear-count>=1",
+        "asset-missing-purpose-count>=1",
+        "asset-orphan-count>=1",
+        "design-health pass",
+        "design-*",
+        "0",
+        "design-health warn",
+        "design-low-roi-count>=1",
+        "design-health fail",
+        "design-contradiction-count>=1",
+        "design-error-count>=1",
+        "gap-check",
+        "analyze",
+        "drop-canon-acceptance-contract",
+        ">=2",
+        "2",
+        "p0",
+        "scope=run-local",
+        "priority=p2",
+        "parent-drop-id",
+        "drop",
+        "connect",
+        "confirm",
+        "goal-origin-init -> chat-intake -> ingest -> first-principles-modeling -> conflict-annotate -> analyze -> organize -> gap-check -> dry-run -> generate -> verify"
+      ],
+      "evidenceRequirements": [
+        "relation-graph",
+        "webui-surface",
+        "dry-run",
+        "packet-runtime",
+        "verify-loop",
+        "goal-origin",
+        "acceptance-binding"
+      ]
+    },
+    {
+      "dropId": "drop-canon-data-format-contract",
+      "title": "Canonical Data Format Contract Asset",
+      "domain": "protocol",
+      "layer": "contract",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/data-format-contract.md",
+      "purpose": "Single source of truth for the standard phonowell data model and persistence format. This asset defines how active assets, runtime state, generation diffs, and verification evidence must be represented.",
+      "contractLines": [
+        "1. standard entities",
+        "- `project`",
+        "- `well`",
+        "- `drop`",
+        "- `relation`",
+        "- `packet-record`",
+        "- `candidate-artifact`",
+        "- `verify-report`",
+        "- `verify-cycle`",
+        "- `self-iteration-record`",
+        "2. standard asset metadata",
+        "- every active asset must carry `drop-id`, `type`, `domain`, `scope`, `owner`, `priority`, `title`",
+        "- active runtime drops inherit the same normalized metadata shape",
+        "- source-of-truth assets must preserve `source-file` for traceability",
+        "3. constrained vocabularies",
+        "- core categorical fields use explicit allowed values instead of free strings",
+        "- required constrained fields include at least:",
+        "- `type`",
+        "- `domain`",
+        "- `scope`",
+        "- `source`",
+        "- `relation-type`",
+        "- `priority`",
+        "- `owner`",
+        "4. standard runtime container",
+        "- active project state persists as one top-level `state.json`",
+        "- top-level state sections must include:",
+        "- `project`",
+        "- `well`",
+        "- `drops`",
+        "- `relations`",
+        "- `candidates`",
+        "- `verifyReports`",
+        "- `verifyCycles`",
+        "- `selfIterationRecords`",
+        "- `packetRecords`",
+        "- `pendingChangedDropIds`",
+        "- `runLogs`",
+        "- `unresolvedQuestions`",
+        "5. diff contract",
+        "- generation diff must include asset additions, removals, changes, and relation deltas",
+        "- diff must expose changed well-level fields when goal, acceptance, definition of done, or constraints move",
+        "6. schema and validation",
+        "- canonical active asset metadata must be validated on load",
+        "- persisted runtime state must be normalized and validated before reuse",
+        "- schema files are implementation artifacts that derive from this contract, not a parallel source of truth"
+      ],
+      "guardrailLines": [
+        "- no active runtime entity with missing `owner`",
+        "- no free-form categorical values for core asset fields",
+        "- no persisted project state reload without contract normalization",
+        "- no generation diff that hides relation or well-field changes"
+      ],
+      "keywords": [
+        "project",
+        "well",
+        "drop",
+        "relation",
+        "packet-record",
+        "candidate-artifact",
+        "verify-report",
+        "verify-cycle",
+        "self-iteration-record",
+        "drop-id",
+        "type",
+        "domain",
+        "scope",
+        "owner",
+        "priority",
+        "title",
+        "source-file",
+        "source",
+        "relation-type",
+        "state.json",
+        "drops",
+        "relations",
+        "candidates",
+        "verifyReports",
+        "verifyCycles",
+        "selfIterationRecords",
+        "packetRecords",
+        "pendingChangedDropIds",
+        "runLogs",
+        "unresolvedQuestions"
+      ],
+      "evidenceRequirements": [
+        "schema-validation",
+        "project-layer",
+        "generation-diff",
+        "relation-graph",
+        "packet-runtime",
+        "verify-loop",
+        "acceptance-binding"
+      ]
+    },
+    {
+      "dropId": "drop-canon-state-versioning-contract",
+      "title": "Canonical State Versioning Contract Asset",
+      "domain": "protocol",
+      "layer": "contract",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/state-versioning-contract.md",
+      "purpose": "Single source of truth for versioning and migration of phonowell persisted state.",
+      "contractLines": [
+        "1. every persisted state includes `schemaVersion`",
+        "2. state loading must support migration from older known versions",
+        "3. incompatible state shape changes must be expressed as explicit migrations",
+        "4. migration runs before runtime validation and state reuse"
+      ],
+      "guardrailLines": [
+        "- no silent breaking state shape change",
+        "- no persisted state reload without version-aware normalization"
+      ],
+      "keywords": [
+        "schemaVersion"
+      ],
+      "evidenceRequirements": [
+        "schema-validation"
+      ]
+    },
+    {
+      "dropId": "drop-canon-entity-schema-contract",
+      "title": "Canonical Entity Schema Contract Asset",
+      "domain": "protocol",
+      "layer": "contract",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/entity-schema-contract.md",
+      "purpose": "Single source of truth for explicit schemas of phonowell entities instead of validating only the top-level container.",
+      "contractLines": [
+        "1. core entity schemas are explicit:",
+        "- `drop`",
+        "- `relation`",
+        "- `candidate-artifact`",
+        "- `packet-record`",
+        "- `verify-report`",
+        "2. top-level state schema composes entity schemas",
+        "3. runtime validation must reject malformed entity records even if top-level state shape exists"
+      ],
+      "guardrailLines": [
+        "- no top-level-only schema gate",
+        "- no untyped entity payload hidden inside valid-looking state"
+      ],
+      "keywords": [
+        "drop",
+        "relation",
+        "candidate-artifact",
+        "packet-record",
+        "verify-report"
+      ],
+      "evidenceRequirements": [
+        "schema-validation",
+        "relation-graph",
+        "packet-runtime",
+        "verify-loop"
+      ]
+    },
+    {
+      "dropId": "drop-canon-relation-semantics-contract",
+      "title": "Canonical Relation Semantics Contract Asset",
+      "domain": "protocol",
+      "layer": "contract",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/relation-semantics-contract.md",
+      "purpose": "Single source of truth for a tighter and more explicit relation vocabulary inside the phonowell asset graph.",
+      "contractLines": [
+        "1. active relation semantics are constrained",
+        "- `constrains`",
+        "- `supports`",
+        "- `references`",
+        "- `derives`",
+        "- `implements`",
+        "2. relation meaning must stay stable across runtime, diff, gate, and UI",
+        "3. default auto-generated relations use the minimal valid semantic instead of a generic catch-all"
+      ],
+      "guardrailLines": [
+        "- no free-form relation labels in active runtime",
+        "- no semantic drift between graph storage and UI rendering"
+      ],
+      "keywords": [
+        "constrains",
+        "supports",
+        "references",
+        "derives",
+        "implements"
+      ],
+      "evidenceRequirements": [
+        "generation-diff",
+        "relation-graph",
+        "webui-surface"
+      ]
+    },
+    {
+      "dropId": "drop-canon-workdir-contract",
+      "title": "Canonical Workdir Contract Asset",
+      "domain": "protocol",
+      "layer": "contract",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/workdir-contract.md",
+      "purpose": "Single source of truth that the default phonowell project work directory is `.phonowell`.",
+      "contractLines": [
+        "1. default project root",
+        "- each project stores runtime state, logs, generated artifacts, and replay evidence under `.phonowell`",
+        "- `.phonowell` is the stable working directory name unless an explicit project setting overrides its parent path",
+        "2. runtime storage expectations",
+        "- persisted state path is scoped under the active project workdir",
+        "- logs, packet records, and generation diffs are project-local",
+        "3. tooling expectations",
+        "- CLI, server, and WebUI must resolve the active project against `.phonowell`",
+        "- implementation should not scatter hidden runtime files at repository root once project mode is enabled"
+      ],
+      "guardrailLines": [],
+      "keywords": [
+        ".phonowell"
+      ],
+      "evidenceRequirements": [
+        "project-layer",
+        "generation-diff",
+        "webui-surface",
+        "workdir",
+        "packet-runtime"
+      ]
+    },
+    {
+      "dropId": "drop-canon-project-layer",
+      "title": "Canonical Project Layer Asset",
+      "domain": "delivery",
+      "layer": "contract",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/project-layer.md",
+      "purpose": "Single source of truth for introducing a `project` layer above wells so users can manage multiple phonowell projects.",
+      "contractLines": [
+        "1. project layer",
+        "- system supports multiple projects",
+        "- each project owns its own workdir, state, assets, and generated artifacts",
+        "2. project actions",
+        "- create project",
+        "- switch active project",
+        "- delete project",
+        "3. runtime expectations",
+        "- active project selection controls which `.phonowell` workspace is mounted",
+        "- switching project must fully swap runtime state instead of mixing assets across projects",
+        "- deleting project must remove only that project's managed runtime data"
+      ],
+      "guardrailLines": [
+        "- no cross-project hidden state bleed",
+        "- no shared active graph between unrelated projects"
+      ],
+      "keywords": [
+        "project",
+        ".phonowell"
+      ],
+      "evidenceRequirements": [
+        "project-layer",
+        "workdir",
+        "layer-visibility"
+      ]
+    },
+    {
+      "dropId": "drop-canon-generator-diff-contract",
+      "title": "Canonical Generator Diff Contract Asset",
+      "domain": "protocol",
+      "layer": "contract",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/generator-diff-contract.md",
+      "purpose": "Single source of truth that generation must consume asset-management diffs so the generator updates existing artifacts incrementally instead of fully regenerating every time.",
+      "contractLines": [
+        "1. diff-before-generate",
+        "- each generate cycle computes an asset-management diff against the latest accepted or latest generated artifact state",
+        "- generator receives the diff as explicit context",
+        "2. diff scope",
+        "- added assets",
+        "- removed assets",
+        "- changed assets",
+        "- changed relations",
+        "- changed acceptance or constraint context",
+        "3. generation mode",
+        "- default mode is incremental modification",
+        "- full regeneration is an explicit fallback, not the default path"
+      ],
+      "guardrailLines": [
+        "- no blind full rewrite on every generate",
+        "- no generator call without visible diff evidence once prior artifact state exists"
+      ],
+      "keywords": [],
+      "evidenceRequirements": [
+        "generation-diff",
+        "relation-graph",
+        "acceptance-binding"
+      ]
+    },
+    {
+      "dropId": "drop-canon-asset-layering-contract",
+      "title": "Canonical Asset Layering Contract Asset",
+      "domain": "core",
+      "layer": "contract",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/asset-layering-contract.md",
+      "purpose": "Single source of truth that active assets must distinguish hard contracts from default policy and reference guidance.",
+      "contractLines": [
+        "1. active asset layers are explicit",
+        "- `contract`",
+        "- `policy`",
+        "- `reference`",
+        "2. canonical bundles default to `contract`",
+        "3. references default to `reference`",
+        "4. runtime and UI should expose asset layer so users can distinguish hard rules from guidance"
+      ],
+      "guardrailLines": [
+        "- no mixing mandatory contract and optional guidance without visible layer",
+        "- no reference asset treated as hard gate without explicit promotion"
+      ],
+      "keywords": [
+        "contract",
+        "policy",
+        "reference"
+      ],
+      "evidenceRequirements": [
+        "webui-surface",
+        "layer-visibility"
+      ]
+    },
+    {
+      "dropId": "drop-canon-v1-delivery",
+      "title": "Canonical V1 Delivery Asset",
+      "domain": "delivery",
+      "layer": "contract",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/v1-delivery.md",
+      "purpose": "Single source of truth for V1 scope, UX, event semantics, runtime contract, and milestone.",
+      "contractLines": [
+        "- artifact: `phonowell WebUI V1`",
+        "- mode: minimal canvas interaction",
+        "- user actions: `drop` + `connect`"
+      ],
+      "guardrailLines": [],
+      "keywords": [
+        "phonowell WebUI V1",
+        "drop",
+        "connect"
+      ],
+      "evidenceRequirements": [
+        "webui-surface"
+      ]
+    },
+    {
+      "dropId": "drop-canon-ui-observability-contract",
+      "title": "Canonical UI Observability Contract Asset",
+      "domain": "delivery",
+      "layer": "policy",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/canonical/ui-observability-contract.md",
+      "purpose": "Single source of truth that the WebUI must expose the key phonowell control signals instead of hiding them behind implementation internals.",
+      "contractLines": [
+        "1. WebUI exposes at least:",
+        "- active asset count",
+        "- generation diff summary",
+        "- schema version",
+        "- schema manifest visibility",
+        "- gate summary",
+        "2. visibility is glanceable in default mode",
+        "3. observability should not increase normal user action count"
+      ],
+      "guardrailLines": [
+        "- no hidden schema/version state during active development",
+        "- no gate-only signals trapped in CLI output"
+      ],
+      "keywords": [],
+      "evidenceRequirements": [
+        "schema-validation",
+        "generation-diff",
+        "webui-surface"
+      ]
+    },
+    {
+      "dropId": "drop-ref-mimikit-openai-llm",
+      "title": "Mimikit Reference Asset",
+      "domain": "reference",
+      "layer": "reference",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/references/mimikit-reference.md",
+      "purpose": "Reference source for proven orchestration and OpenAI/LLM interaction patterns that can be reused in `phonowell` with minimal adaptation cost.",
+      "contractLines": [
+        "1. `OpenAI provider` implementation approach",
+        "2. selected `LLM interaction` patterns"
+      ],
+      "guardrailLines": [
+        "- do not copy unrelated modules",
+        "- do not import full architecture as-is",
+        "- do not introduce compatibility layers that violate phonowell simplification"
+      ],
+      "keywords": [
+        "phonowell",
+        "OpenAI provider",
+        "LLM interaction"
+      ],
+      "evidenceRequirements": [
+        "layer-visibility",
+        "provider-runtime"
+      ]
+    },
+    {
+      "dropId": "drop-ref-react-19",
+      "title": "React 19 Reference Asset",
+      "domain": "reference",
+      "layer": "reference",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/references/react-19-reference.md",
+      "purpose": "Reference baseline for implementing the WebUI graph interaction layer with stable, mature React capabilities and minimal custom uncertainty.",
+      "contractLines": [
+        "1. component and rendering model choices for canvas-first UI",
+        "2. state update patterns suitable for asset graph interaction",
+        "3. integration baseline for V1 delivery implementation"
+      ],
+      "guardrailLines": [
+        "- no framework lock beyond current V1 needs",
+        "- no feature adoption without ROI to canonical V1 goals"
+      ],
+      "keywords": [],
+      "evidenceRequirements": [
+        "webui-surface",
+        "react-webui"
+      ]
+    },
+    {
+      "dropId": "drop-ref-codex",
+      "title": "Codex Reference Asset",
+      "domain": "reference",
+      "layer": "reference",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/references/codex-reference.md",
+      "purpose": "Reference tool pattern for fast implementation and verification loops while keeping `phonowell` core model vendor-neutral.",
+      "contractLines": [
+        "1. task execution patterns for iterative implementation",
+        "2. AI-assisted code/document update workflow",
+        "3. fast feedback loops for build/verify cycles"
+      ],
+      "guardrailLines": [
+        "- no tool-specific lock-in for core product logic",
+        "- no direct coupling to one vendor protocol in domain model"
+      ],
+      "keywords": [
+        "phonowell"
+      ],
+      "evidenceRequirements": [
+        "verify-loop",
+        "cli-surface"
+      ]
+    },
+    {
+      "dropId": "drop-ref-visualization-first",
+      "title": "Visualization-First Reference Asset",
+      "domain": "reference",
+      "layer": "reference",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/references/visualization-reference.md",
+      "purpose": "Reference principle to prioritize visual expression over verbose text for understanding project structure and decisions.",
+      "contractLines": [
+        "1. prefer visual graph/card outputs for asset relationships and state",
+        "2. compress long textual explanations into visual summaries when possible",
+        "3. surface key status through glanceable visual cues"
+      ],
+      "guardrailLines": [
+        "- no decorative visuals without decision value",
+        "- no visual complexity that increases cognitive load"
+      ],
+      "keywords": [],
+      "evidenceRequirements": [
+        "relation-graph"
+      ]
+    },
+    {
+      "dropId": "drop-ref-engineering-execution",
+      "title": "Engineering Execution Reference Asset",
+      "domain": "reference",
+      "layer": "reference",
+      "sourceFile": "/Users/mimiko/Projects/phonowell/docs/assets/references/engineering-execution-reference.md",
+      "purpose": "Unified engineering execution reference to keep delivery deterministic, low-friction, and non-blocking for users.",
+      "contractLines": [
+        "1. use explicit code implementation to remove uncertainty; delegate only inherently LLM-only tasks to LLM",
+        "2. default language/runtime for iteration: TypeScript + direct tsx startup",
+        "3. require all user-facing questions to be closed in dry-run; generate stage remains execution-only",
+        "4. keep implementation verifiable through contracts and observable run evidence"
+      ],
+      "guardrailLines": [
+        "- no compile-first requirement in normal dev iteration",
+        "- no LLM-first replacement for deterministic engineering logic",
+        "- no questioning users during generate stage"
+      ],
+      "keywords": [],
+      "evidenceRequirements": [
+        "dry-run"
+      ]
+    }
+  ]
+}

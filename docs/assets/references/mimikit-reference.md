@@ -1,13 +1,15 @@
+---
+dropId: drop-ref-mimikit-openai-llm
+type: reference-project
+domain: reference
+scope: well-global
+owner: architecture-core
+layer: reference
+priority: p1
+title: Mimikit Reference Asset
+active: true
+---
 # Mimikit Reference Asset
-
-## Asset Metadata
-
-- `drop-id`: `drop-ref-mimikit-openai-llm`
-- `type`: `reference-project`
-- `domain`: `reference`
-- `scope`: `well-global`
-- `owner`: `architecture-core`
-- `priority`: `p1`
 
 ## Purpose
 

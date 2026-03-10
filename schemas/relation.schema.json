@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phonowell.dev/schemas/relation.schema.json",
+  "title": "Phonowell Relation",
+  "type": "object",
+  "required": ["relationId", "wellId", "fromDropId", "toDropId", "relationType", "createdAt"],
+  "properties": {
+    "relationId": { "type": "string" },
+    "wellId": { "type": "string" },
+    "fromDropId": { "type": "string" },
+    "toDropId": { "type": "string" },
+    "relationType": { "type": "string", "enum": ["constrains", "supports", "references", "derives", "implements"] },
+    "createdAt": { "type": "string" }
+  }
+}

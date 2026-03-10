@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phonowell.dev/schemas/verify-report.schema.json",
+  "title": "Phonowell Verify Report",
+  "type": "object",
+  "required": [
+    "pass",
+    "issues",
+    "suggestions",
+    "acceptanceCoverageDropIds",
+    "acceptanceItems",
+    "changedDropCoverage",
+    "uncoveredAcceptanceItemIds",
+    "selfIterationEvidence",
+    "changedDropIds",
+    "rerunConsistent",
+    "createdAt"
+  ],
+  "properties": {
+    "pass": { "type": "boolean" },
+    "issues": { "type": "array", "items": { "type": "string" } },
+    "suggestions": { "type": "array", "items": { "type": "string" } },
+    "acceptanceCoverageDropIds": { "type": "array", "items": { "type": "string" } },
+    "acceptanceItems": { "type": "array", "items": { "type": "object" } },
+    "changedDropCoverage": { "type": "array", "items": { "type": "object" } },
+    "uncoveredAcceptanceItemIds": { "type": "array", "items": { "type": "string" } },
+    "selfIterationEvidence": { "type": "array", "items": { "type": "string" } },
+    "changedDropIds": { "type": "array", "items": { "type": "string" } },
+    "rerunConsistent": { "type": "boolean" },
+    "packetId": { "type": "string" },
+    "createdAt": { "type": "string" }
+  }
+}

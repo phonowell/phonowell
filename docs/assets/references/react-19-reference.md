@@ -1,13 +1,15 @@
+---
+dropId: drop-ref-react-19
+type: reference-tech
+domain: reference
+scope: well-global
+owner: webui-core
+layer: reference
+priority: p1
+title: React 19 Reference Asset
+active: true
+---
 # React 19 Reference Asset
-
-## Asset Metadata
-
-- `drop-id`: `drop-ref-react-19`
-- `type`: `reference-tech`
-- `domain`: `reference`
-- `scope`: `well-global`
-- `owner`: `webui-core`
-- `priority`: `p1`
 
 ## Purpose
 

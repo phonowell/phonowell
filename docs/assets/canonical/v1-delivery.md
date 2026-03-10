@@ -1,13 +1,15 @@
+---
+dropId: drop-canon-v1-delivery
+type: canonical-bundle
+domain: delivery
+scope: well-global
+owner: delivery-core
+layer: contract
+priority: p0
+title: Canonical V1 Delivery Asset
+active: true
+---
 # Canonical V1 Delivery Asset
-
-## Asset Metadata
-
-- `drop-id`: `drop-canon-v1-delivery`
-- `type`: `canonical-bundle`
-- `domain`: `delivery`
-- `scope`: `well-global`
-- `owner`: `delivery-core`
-- `priority`: `p0`
 
 ## Purpose
 
@@ -22,9 +24,9 @@ Single source of truth for V1 scope, UX, event semantics, runtime contract, and 
 ## V1 Experience
 
 1. center node is `goal-origin`
-2. AI auto-analyzes and summarizes assets
-3. AI auto-organizes graph in mindmap style
-4. summary cards support manual edit and AI refine
+2. assets ingest immediately and queue background automation with auditable decisions
+3. system may auto-apply only high-confidence summary/metadata/relation updates; low-confidence results stay as recorded candidates
+4. summary cards support manual edit
 5. conflicts are annotated, not hard-blocked by default
 
 ## V1 Execution Contract

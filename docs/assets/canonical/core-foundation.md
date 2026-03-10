@@ -1,13 +1,15 @@
+---
+dropId: drop-canon-core-foundation
+type: canonical-bundle
+domain: core
+scope: well-global
+owner: product-core
+layer: contract
+priority: p0
+title: Canonical Core Foundation Asset
+active: true
+---
 # Canonical Core Foundation Asset
-
-## Asset Metadata
-
-- `drop-id`: `drop-canon-core-foundation`
-- `type`: `canonical-bundle`
-- `domain`: `core`
-- `scope`: `well-global`
-- `owner`: `product-core`
-- `priority`: `p0`
 
 ## Purpose
 

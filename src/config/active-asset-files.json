@@ -1,0 +1,21 @@
+[
+  "canonical/core-foundation.md",
+  "canonical/legacy-archive-boundary.md",
+  "canonical/acceptance-contract.md",
+  "canonical/execution-protocol.md",
+  "canonical/data-format-contract.md",
+  "canonical/state-versioning-contract.md",
+  "canonical/entity-schema-contract.md",
+  "canonical/relation-semantics-contract.md",
+  "canonical/workdir-contract.md",
+  "canonical/project-layer.md",
+  "canonical/generator-diff-contract.md",
+  "canonical/asset-layering-contract.md",
+  "canonical/v1-delivery.md",
+  "canonical/ui-observability-contract.md",
+  "references/mimikit-reference.md",
+  "references/react-19-reference.md",
+  "references/codex-reference.md",
+  "references/visualization-reference.md",
+  "references/engineering-execution-reference.md"
+]
