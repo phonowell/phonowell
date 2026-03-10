@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { PhonoWellEngine } from "./engine.js";
 import { loadAssetContractManifest } from "./asset-contracts.js";
 import type { CatalogAsset, PacketRecord, SchemaValidationReport, WellState } from "./types.js";
 import { getSchemaValidationReport } from "./validator.js";
@@ -142,4 +143,11 @@ export function buildCoverageReport(catalog: CatalogAsset[], state: WellState): 
     schemaValidation,
     createdAt: new Date().toISOString(),
   };
+}
+
+export function buildCoverageScenarioReport(): CoverageReport {
+  const scenarioEngine = new PhonoWellEngine();
+  scenarioEngine.bootstrapInitialState();
+  scenarioEngine.runDryRun();
+  return buildCoverageReport(scenarioEngine.getCatalog(), scenarioEngine.getState());
 }

@@ -1,6 +1,4 @@
 import { createServer } from "node:http";
-import { readFileSync, statSync } from "node:fs";
-import { extname, resolve } from "node:path";
 import { engine } from "./orchestrator/index.js";
 import { persistCurrentState } from "./orchestrator/store.js";
 import { handleAssetRoutes } from "./server/api/routes/assets.js";
@@ -11,6 +9,7 @@ import { json } from "./server/api/http.js";
 import type { ApiResponse } from "./server/api/http.js";
 import { hydrateRuntimeEngine } from "./server/bootstrap.js";
 import { resolveFromAppRoot } from "./runtime-paths.js";
+import { serveStatic } from "./server/static.js";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const MAX_PORT_SEARCH = Number(process.env.PHONOWELL_PORT_SEARCH_LIMIT ?? 10);
@@ -31,25 +30,6 @@ function send(
   res.end(payload.body);
 }
 
-function getMimeType(file: string): string {
-  switch (extname(file)) {
-    case ".html":
-      return "text/html; charset=utf-8";
-    case ".js":
-      return "text/javascript; charset=utf-8";
-    case ".css":
-      return "text/css; charset=utf-8";
-    case ".json":
-      return "application/json; charset=utf-8";
-    case ".svg":
-      return "image/svg+xml";
-    case ".mjs":
-      return "text/javascript; charset=utf-8";
-    default:
-  return "text/plain; charset=utf-8";
-  }
-}
-
 async function handleApi(
   req: import("node:http").IncomingMessage,
 ) : Promise<ApiResponse> {
@@ -63,28 +43,6 @@ async function handleApi(
     ?? await handleRuntimeRoutes(ctx)
     ?? json({ error: "Not Found" }, 404)
   );
-}
-
-function serveStatic(pathname: string): { status: number; body: string; headers: Record<string, string> } {
-  const file = pathname === "/" ? "/index.html" : pathname;
-  const absPath = resolve(WEB_ROOT, `.${file}`);
-  if (!absPath.startsWith(WEB_ROOT)) {
-    return { status: 403, body: "Forbidden", headers: { "content-type": "text/plain; charset=utf-8" } };
-  }
-
-  try {
-    const stat = statSync(absPath);
-    if (!stat.isFile()) {
-      return { status: 404, body: "Not Found", headers: { "content-type": "text/plain; charset=utf-8" } };
-    }
-    return {
-      status: 200,
-      body: readFileSync(absPath, "utf8"),
-      headers: { "content-type": getMimeType(absPath) },
-    };
-  } catch {
-    return { status: 404, body: "Not Found", headers: { "content-type": "text/plain; charset=utf-8" } };
-  }
 }
 
 const server = createServer(async (req, res) => {
@@ -103,7 +61,7 @@ const server = createServer(async (req, res) => {
       send(res, payload);
       return;
     }
-    const payload = serveStatic(url.pathname);
+    const payload = serveStatic(WEB_ROOT, url.pathname);
     send(res, payload);
   } catch (error) {
     send(res, json({ error: String((error as Error).message) }, 500));

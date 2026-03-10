@@ -111,9 +111,13 @@ export async function handleAssetRoutes(ctx: ApiContext) {
     } catch (error) {
       return badRequest(error);
     }
-    const relation = engine.connectDrops(body.fromDropId, body.toDropId, body.relationType ?? "references");
-    persistCurrentState();
-    return json({ relation, report: null });
+    try {
+      const relation = engine.connectDrops(body.fromDropId, body.toDropId, body.relationType ?? "references");
+      persistCurrentState();
+      return json({ relation, report: null });
+    } catch (error) {
+      return badRequest(error);
+    }
   }
 
   if (method === "DELETE" && url.pathname.startsWith("/api/relations/")) {

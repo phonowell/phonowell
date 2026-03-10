@@ -192,6 +192,21 @@ export function setAcceptanceTraceLinks(
 }
 
 export function connectDrops(state: WellState, fromDropId: string, toDropId: string, relationType: RelationType = "references"): Relation {
+  if (fromDropId === toDropId) {
+    throw new Error("cannot connect a drop to itself");
+  }
+  const fromExists = state.drops.some((drop) => drop.dropId === fromDropId);
+  const toExists = state.drops.some((drop) => drop.dropId === toDropId);
+  if (!fromExists || !toExists) {
+    throw new Error("relation endpoints must reference existing drops");
+  }
+  const existing = state.relations.find((rel) =>
+    rel.fromDropId === fromDropId
+    && rel.toDropId === toDropId
+    && rel.relationType === relationType);
+  if (existing) {
+    throw new Error("relation already exists");
+  }
   const now = nowIso();
   const relation = createRelation(state.well.id, fromDropId, toDropId, relationType, now);
   state.relations.push(relation);

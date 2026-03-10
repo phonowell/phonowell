@@ -17,6 +17,12 @@ function relationCount(relations: Relation[], dropId: string): number {
   return relations.filter((rel) => rel.fromDropId === dropId || rel.toDropId === dropId).length;
 }
 
+function hasUnclearField(drop: Drop, relations: Relation[]): boolean {
+  return !drop.content || drop.content.trim().length < 8
+    || !drop.purpose || drop.purpose.trim().length < 8
+    || relationCount(relations, drop.dropId) === 0;
+}
+
 export function evaluateDryRun(state: WellState): DryRunEvaluation {
   const drops = state.drops;
   const relations = state.relations;
@@ -79,7 +85,7 @@ export function evaluateDryRun(state: WellState): DryRunEvaluation {
       "asset-clarity",
       unclearCount >= 1 || missingPurposeCount >= 1 || orphanCount >= 1
         ? "fail"
-        : visible.some((drop) => drop.confidence < 0.8)
+        : visible.some((drop) => hasUnclearField(drop, relations) && (drop.confidence ?? 1) < 0.8)
           ? "warn"
           : "pass",
       false,

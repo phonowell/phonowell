@@ -26,6 +26,13 @@ function slugify(input: string): string {
   return input.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "project";
 }
 
+function assertValidProjectSlug(slug: string): string {
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+    throw new Error(`invalid project slug: ${slug}`);
+  }
+  return slug;
+}
+
 function projectDir(slug: string): string {
   return join(projectsRoot(), slug);
 }
@@ -150,9 +157,10 @@ export function createProject(name: string): ProjectState {
 }
 
 export function switchProject(slug: string): ProjectState {
-  const project = readJsonFile<ProjectState>(metaFileForProject(slug));
+  const safeSlug = assertValidProjectSlug(slug);
+  const project = readJsonFile<ProjectState>(metaFileForProject(safeSlug));
   if (!project || project.deletedAt) {
-    throw new Error(`project not found: ${slug}`);
+    throw new Error(`project not found: ${safeSlug}`);
   }
   project.updatedAt = new Date().toISOString();
   ensureProjectWorkspace(project);
@@ -161,14 +169,15 @@ export function switchProject(slug: string): ProjectState {
 }
 
 export function deleteProject(slug: string): { deleted: boolean; activeProject: ProjectState } {
+  const safeSlug = assertValidProjectSlug(slug);
   const active = getActiveProject();
-  if (active.slug === slug && listProjects().length <= 1) {
+  if (active.slug === safeSlug && listProjects().length <= 1) {
     throw new Error("cannot delete the only project");
   }
 
-  const dir = projectDir(slug);
+  const dir = projectDir(safeSlug);
   if (!existsSync(dir) || !statSync(dir).isDirectory()) {
-    throw new Error(`project not found: ${slug}`);
+    throw new Error(`project not found: ${safeSlug}`);
   }
   rmSync(dir, { recursive: true, force: true });
 

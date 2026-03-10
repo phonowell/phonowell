@@ -1,16 +1,17 @@
 import { loadAssetContractManifest } from "../../../orchestrator/asset-contracts.js";
 import { loadAssetCatalog } from "../../../orchestrator/asset-catalog.js";
-import { buildCoverageReport } from "../../../orchestrator/coverage.js";
+import { buildCoverageScenarioReport } from "../../../orchestrator/coverage.js";
 import { evaluateCoreGate } from "../../../orchestrator/core-gate.js";
 import { importCatalogIntoState } from "../../../orchestrator/importer.js";
 import { getActiveProject, listProjects } from "../../../orchestrator/store.js";
 import { getSchemaManifest } from "../../../orchestrator/index.js";
+import type { WellState } from "../../../orchestrator/types.js";
 import type { ApiContext } from "../context.js";
 import { json } from "../http.js";
 
 function buildObservabilitySnapshot(ctx: ApiContext) {
   const state = ctx.engine.getState();
-  const coverage = buildCoverageReport(ctx.engine.getCatalog(), state);
+  const coverage = buildCoverageScenarioReport();
   const contractManifest = loadAssetContractManifest();
   const visibleDrops = state.drops.filter((drop) => drop.lifecycleState !== "archived");
   const latestCandidate = state.candidates[0] ?? null;
@@ -87,6 +88,29 @@ function buildObservabilitySnapshot(ctx: ApiContext) {
   };
 }
 
+function buildPublicStateSnapshot(state: WellState): Omit<WellState, "packetRecords" | "proposals" | "runLogs" | "project" | "assetConversations"> & {
+  project: Omit<WellState["project"], "workdir">;
+  packetRecords: [];
+  proposals: [];
+  runLogs: [];
+  assetConversations: [];
+} {
+  return {
+    ...state,
+    project: {
+      projectId: state.project.projectId,
+      name: state.project.name,
+      slug: state.project.slug,
+      createdAt: state.project.createdAt,
+      updatedAt: state.project.updatedAt,
+    },
+    packetRecords: [],
+    proposals: [],
+    runLogs: [],
+    assetConversations: [],
+  };
+}
+
 export async function handleReadRoutes(ctx: ApiContext) {
   const { method, url, engine, persistCurrentState } = ctx;
 
@@ -106,7 +130,7 @@ export async function handleReadRoutes(ctx: ApiContext) {
     return json({ activeProject: getActiveProject(), projects: listProjects() });
   }
   if (method === "GET" && url.pathname === "/api/coverage") {
-    return json(buildCoverageReport(engine.getCatalog(), engine.getState()));
+    return json(buildCoverageScenarioReport());
   }
   if (method === "GET" && url.pathname === "/api/core-gate") {
     const result = evaluateCoreGate(engine.getState(), engine.getCatalog());
@@ -129,9 +153,13 @@ export async function handleReadRoutes(ctx: ApiContext) {
     return json({ messages: engine.getConversationMessages(dropId) });
   }
   if (method === "GET" && url.pathname === "/api/state") {
-    return json(engine.getState());
+    const state = engine.getState();
+    return json(ctx.debugMode ? state : buildPublicStateSnapshot(state));
   }
   if (method === "POST" && url.pathname === "/api/reset-state") {
+    if (!ctx.debugMode) {
+      return json({ error: "debug api disabled" }, 404);
+    }
     const fresh = engine.getState();
     fresh.selfIterationRecords = [];
     fresh.pendingChangedDropIds = [];
@@ -165,10 +193,16 @@ export async function handleReadRoutes(ctx: ApiContext) {
     return json({ reset: true });
   }
   if (method === "POST" && url.pathname === "/api/state/persist") {
+    if (!ctx.debugMode) {
+      return json({ error: "debug api disabled" }, 404);
+    }
     persistCurrentState();
     return json({ persisted: true });
   }
   if (method === "POST" && url.pathname === "/api/import-assets") {
+    if (!ctx.debugMode) {
+      return json({ error: "debug api disabled" }, 404);
+    }
     const imported = importCatalogIntoState(engine.getState(), loadAssetCatalog());
     engine.replaceState(imported.state);
     persistCurrentState();

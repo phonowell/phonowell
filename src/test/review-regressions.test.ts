@@ -262,6 +262,71 @@ test("project routes can create, switch, and delete isolated projects", { concur
   });
 });
 
+test("project routes reject invalid slugs instead of bubbling failures", { concurrency: false }, async () => {
+  await withWorkspaceRoot("phonowell-project-invalid-slug-", async () => {
+    const { handleProjectRoutes } = await import("../server/api/routes/projects.js");
+    const { engine } = await import("../orchestrator/index.js");
+    const { PhonoWellEngine } = await import("../orchestrator/engine.js");
+    const { persistCurrentState } = await import("../orchestrator/store.js");
+
+    engine.replaceState(new PhonoWellEngine().getState());
+    engine.bootstrapInitialState();
+
+    const switchResponse = await handleProjectRoutes(makeCtx({
+      engine,
+      method: "PUT",
+      path: "/api/projects/%2E%2E%2Fescape",
+      persistCurrentState,
+    }));
+    const deleteResponse = await handleProjectRoutes(makeCtx({
+      engine,
+      method: "DELETE",
+      path: "/api/projects/%2E%2E%2Fescape",
+      persistCurrentState,
+    }));
+
+    assert.ok(switchResponse);
+    assert.ok(deleteResponse);
+    assert.equal(switchResponse.status, 404);
+    assert.equal(deleteResponse.status, 404);
+    assert.match(switchResponse.body, /invalid project slug/);
+    assert.match(deleteResponse.body, /invalid project slug/);
+  });
+});
+
+test("project routes reject invalid and missing slugs with 404 instead of 500", { concurrency: false }, async () => {
+  await withWorkspaceRoot("phonowell-project-invalid-slug-", async () => {
+    const { handleProjectRoutes } = await import("../server/api/routes/projects.js");
+    const { engine } = await import("../orchestrator/index.js");
+    const { PhonoWellEngine } = await import("../orchestrator/engine.js");
+    const { persistCurrentState } = await import("../orchestrator/store.js");
+
+    engine.replaceState(new PhonoWellEngine().getState());
+    engine.bootstrapInitialState();
+    persistCurrentState();
+
+    const invalidSwitch = await handleProjectRoutes(makeCtx({
+      engine,
+      method: "PUT",
+      path: "/api/projects/bad_slug",
+      persistCurrentState,
+    }));
+    const missingDelete = await handleProjectRoutes(makeCtx({
+      engine,
+      method: "DELETE",
+      path: "/api/projects/missing-project",
+      persistCurrentState,
+    }));
+
+    assert.ok(invalidSwitch);
+    assert.ok(missingDelete);
+    assert.equal(invalidSwitch.status, 404);
+    assert.equal(missingDelete.status, 404);
+    assert.match(invalidSwitch.body, /invalid project slug|project not found/);
+    assert.match(missingDelete.body, /project not found/);
+  });
+});
+
 test("asset routes validate input and persist relation/question flows", async () => {
   const { handleAssetRoutes } = await import("../server/api/routes/assets.js");
   const engine = new (await import("../orchestrator/engine.js")).PhonoWellEngine();
@@ -297,6 +362,15 @@ test("asset routes validate input and persist relation/question flows", async ()
   assert.ok(createRelation);
   const relationId = JSON.parse(createRelation.body).relation.relationId as string;
 
+  const duplicateRelation = await handleAssetRoutes(makeCtx({
+    engine,
+    method: "POST",
+    path: "/api/relations",
+    body: { fromDropId: goalDropId, toDropId: createdDropId, relationType: "references" },
+  }));
+  assert.ok(duplicateRelation);
+  assert.equal(duplicateRelation.status, 400);
+
   const updateQuestions = await handleAssetRoutes(makeCtx({
     engine,
     method: "POST",
@@ -313,6 +387,97 @@ test("asset routes validate input and persist relation/question flows", async ()
   }));
   assert.ok(removeRelation);
   assert.equal(JSON.parse(removeRelation.body).removed, true);
+
+  const selfRelation = await handleAssetRoutes(makeCtx({
+    engine,
+    method: "POST",
+    path: "/api/relations",
+    body: { fromDropId: goalDropId, toDropId: goalDropId, relationType: "references" },
+  }));
+  assert.ok(selfRelation);
+  assert.equal(selfRelation.status, 400);
+
+  const unknownRelation = await handleAssetRoutes(makeCtx({
+    engine,
+    method: "POST",
+    path: "/api/relations",
+    body: { fromDropId: goalDropId, toDropId: "drop-missing", relationType: "references" },
+  }));
+  assert.ok(unknownRelation);
+  assert.equal(unknownRelation.status, 400);
+});
+
+test("oversized request bodies are rejected before ingestion", async () => {
+  const { handleAssetRoutes } = await import("../server/api/routes/assets.js");
+  const engine = new (await import("../orchestrator/engine.js")).PhonoWellEngine();
+  engine.bootstrapInitialState();
+  const previousLimit = process.env.PHONOWELL_MAX_BODY_BYTES;
+  process.env.PHONOWELL_MAX_BODY_BYTES = "128";
+  try {
+    const response = await handleAssetRoutes(makeCtx({
+      engine,
+      method: "POST",
+      path: "/api/drops",
+      body: { text: "x".repeat(1024) },
+    }));
+    assert.ok(response);
+    assert.equal(response.status, 413);
+    assert.match(response.body, /request body too large/);
+  } finally {
+    if (previousLimit === undefined) {
+      delete process.env.PHONOWELL_MAX_BODY_BYTES;
+    } else {
+      process.env.PHONOWELL_MAX_BODY_BYTES = previousLimit;
+    }
+  }
+});
+
+test("invalid body-size env falls back to the default limit", async () => {
+  const { handleAssetRoutes } = await import("../server/api/routes/assets.js");
+  const engine = new (await import("../orchestrator/engine.js")).PhonoWellEngine();
+  engine.bootstrapInitialState();
+  const previousLimit = process.env.PHONOWELL_MAX_BODY_BYTES;
+  process.env.PHONOWELL_MAX_BODY_BYTES = "not-a-number";
+  try {
+    const response = await handleAssetRoutes(makeCtx({
+      engine,
+      method: "POST",
+      path: "/api/drops",
+      body: { text: "normal payload should still be accepted" },
+    }));
+    assert.ok(response);
+    assert.equal(response.status, 200);
+  } finally {
+    if (previousLimit === undefined) {
+      delete process.env.PHONOWELL_MAX_BODY_BYTES;
+    } else {
+      process.env.PHONOWELL_MAX_BODY_BYTES = previousLimit;
+    }
+  }
+});
+
+test("non-integer body-size env falls back to the default limit", async () => {
+  const { handleAssetRoutes } = await import("../server/api/routes/assets.js");
+  const engine = new (await import("../orchestrator/engine.js")).PhonoWellEngine();
+  engine.bootstrapInitialState();
+  const previousLimit = process.env.PHONOWELL_MAX_BODY_BYTES;
+  process.env.PHONOWELL_MAX_BODY_BYTES = "0.5";
+  try {
+    const response = await handleAssetRoutes(makeCtx({
+      engine,
+      method: "POST",
+      path: "/api/drops",
+      body: { text: "fractional limits must not collapse the body limit to zero" },
+    }));
+    assert.ok(response);
+    assert.equal(response.status, 200);
+  } finally {
+    if (previousLimit === undefined) {
+      delete process.env.PHONOWELL_MAX_BODY_BYTES;
+    } else {
+      process.env.PHONOWELL_MAX_BODY_BYTES = previousLimit;
+    }
+  }
 });
 
 test("asset and schema loaders resolve from app root independent of cwd", { concurrency: false }, async () => {

@@ -44,7 +44,12 @@ export async function handleRuntimeRoutes(ctx: ApiContext) {
     return json({ goal, report: null });
   }
   if (method === "POST" && url.pathname === "/api/acceptance-links") {
-    const body = (await parseBody(ctx.req)) as Partial<{ dropId: string; itemIds: string[]; rationale: string }>;
+    let body: Partial<{ dropId: string; itemIds: string[]; rationale: string }>;
+    try {
+      body = (await parseBody(ctx.req)) as Partial<{ dropId: string; itemIds: string[]; rationale: string }>;
+    } catch (error) {
+      return badRequest(error);
+    }
     try {
       const drop = engine.bindDropToAcceptanceItems(body.dropId ?? "", body.itemIds ?? [], body.rationale ?? "manual api bind");
       persistCurrentState();
@@ -54,7 +59,12 @@ export async function handleRuntimeRoutes(ctx: ApiContext) {
     }
   }
   if (method === "POST" && url.pathname === "/api/conversations") {
-    const body = (await parseBody(ctx.req)) as Partial<{ content: string; dropId: string; scope: "global" | "asset" }>;
+    let body: Partial<{ content: string; dropId: string; scope: "global" | "asset" }>;
+    try {
+      body = (await parseBody(ctx.req)) as Partial<{ content: string; dropId: string; scope: "global" | "asset" }>;
+    } catch (error) {
+      return badRequest(error);
+    }
     try {
       const result = await engine.runConversation({
         content: body.content ?? "",
@@ -105,7 +115,12 @@ export async function handleRuntimeRoutes(ctx: ApiContext) {
     return json({ report: engine.runAutoFlow(body.trigger ?? "manual.auto-flow") });
   }
   if (method === "POST" && url.pathname === "/api/deep-organize") {
-    const body = (await parseBody(ctx.req)) as Partial<{ trigger: string }>;
+    let body: Partial<{ trigger: string }>;
+    try {
+      body = (await parseBody(ctx.req)) as Partial<{ trigger: string }>;
+    } catch (error) {
+      return badRequest(error);
+    }
     try {
       const result = await engine.runDeepOrganize(body.trigger ?? "manual.deep-organize");
       persistCurrentState();

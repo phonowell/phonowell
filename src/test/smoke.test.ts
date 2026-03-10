@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { PhonoWellEngine } from "../orchestrator/engine.js";
 import { listAcceptanceItems } from "../orchestrator/acceptance-traceability.js";
+import { runCoreGateScenario } from "../orchestrator/core-gate.js";
 import { buildFallbackStructured, parseStructuredOutput } from "../orchestrator/packet-structured.js";
 
 process.env.PHONOWELL_DISABLE_CODEX_RUNTIME = "1";
@@ -172,6 +173,41 @@ test("runCycle short-circuits after dry-run fail", async () => {
   assert.equal(after.proposals.length, before.proposals.length);
   assert.equal(after.candidates.length, before.candidates.length);
   assert.equal(after.verifyReports.length, before.verifyReports.length);
+});
+
+test("core gate scenario converges to pass after end-to-end execution", async () => {
+  const engine = new PhonoWellEngine();
+
+  const result = await runCoreGateScenario(engine);
+
+  assert.equal(result.gateResult, "pass");
+  assert.equal(result.dryRun?.gateResult, "pass");
+  assert.equal(result.summary.failCount, 0);
+  assert.equal(result.summary.warnCount, 0);
+});
+
+test("asset-clarity stays pass when low-confidence assets are otherwise explicit", () => {
+  const engine = new PhonoWellEngine();
+  return runCoreGateScenario(engine).then(() => {
+    engine.ingestDrop({
+      type: "note",
+      source: "ai-generated",
+      title: "Low confidence but explicit",
+      summary: "Clear content, purpose, and relations should avoid asset-clarity warnings.",
+      preserveOrphan: false,
+    });
+
+    const state = engine.getState();
+    const created = state.drops.find((drop) => drop.title === "Low confidence but explicit");
+    assert.ok(created);
+    created!.confidence = 0.61;
+    engine.replaceState(state);
+
+    const report = engine.runDryRun();
+    const assetClarity = report.checks.find((check) => check.name === "asset-clarity");
+
+    assert.equal(assetClarity?.status, "pass");
+  });
 });
 
 test("post-ingest automation is queued without blocking and writes auditable decisions", () => {
@@ -421,7 +457,9 @@ test("resolved automation checkpoint is removed from the assistant loop", () => 
     summary: "This summary is now long enough to be confidently linked to the goal.",
     skipAutoFlow: true,
   });
-  engine.connectDrops(goalDropId, drop.dropId, "implements");
+  if (!engine.getState().relations.some((rel) => rel.fromDropId === goalDropId && rel.toDropId === drop.dropId && rel.relationType === "implements")) {
+    engine.connectDrops(goalDropId, drop.dropId, "implements");
+  }
 
   const loop = engine.getMainLoopSnapshot();
 

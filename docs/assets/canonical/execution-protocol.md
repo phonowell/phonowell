@@ -77,7 +77,7 @@ Dry-run checklist:
 
 Dry-run detail rules (V1):
 - `asset-clarity pass`: `asset-unclear-count=0` and `asset-missing-purpose-count=0` and `asset-orphan-count=0`
-- `asset-clarity warn`: no fail but at least one unclear field with AI confidence `<0.8`
+- `asset-clarity warn`: reserved for future confidence-scoped clarity heuristics; V1 does not emit it when all clarity counts are `0`
 - `asset-clarity fail`: any of `asset-unclear-count>=1`, `asset-missing-purpose-count>=1`, or `asset-orphan-count>=1`
 - `design-health pass`: all `design-*` issue counts are `0`
 - `design-health warn`: `design-low-roi-count>=1` and no contradiction/error

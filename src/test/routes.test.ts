@@ -11,6 +11,7 @@ import { PhonoWellEngine } from "../orchestrator/engine.js";
 import { handleAssetRoutes } from "../server/api/routes/assets.js";
 import { handleReadRoutes } from "../server/api/routes/read.js";
 import { handleRuntimeRoutes } from "../server/api/routes/runtime.js";
+import { serveStatic } from "../server/static.js";
 import type { ApiContext } from "../server/api/context.js";
 
 process.env.PHONOWELL_DISABLE_CODEX_RUNTIME = "1";
@@ -24,6 +25,13 @@ function makeReq(method: string, body?: unknown) {
   } else {
     req.end();
   }
+  return req as unknown as IncomingMessage;
+}
+
+function makeRawReq(method: string, rawBody: string) {
+  const req = new PassThrough() as PassThrough & { method?: string; url?: string };
+  req.method = method;
+  req.end(rawBody);
   return req as unknown as IncomingMessage;
 }
 
@@ -63,6 +71,29 @@ test("observability hides packet and proposal details when debug api is disabled
   assert.equal(payload.latestProposal, null);
   assert.equal(payload.latestPacketStructuredSummary, null);
   assert.equal(payload.latestStructuredApplyLog, null);
+});
+
+test("state route redacts debug-only internals when debug api is disabled", async () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
+  await engine.runDeepOrganize("test.state-redaction");
+
+  const response = await handleReadRoutes(makeCtx({
+    engine,
+    method: "GET",
+    path: "/api/state",
+    debugMode: false,
+  }));
+
+  assert.ok(response);
+  const payload = JSON.parse(response.body);
+  assert.deepEqual(payload.packetRecords, []);
+  assert.deepEqual(payload.proposals, []);
+  assert.deepEqual(payload.runLogs, []);
+  assert.deepEqual(payload.assetConversations, []);
+  assert.equal(payload.project.workdir, undefined);
+  assert.equal(Array.isArray(payload.verifyReports), true);
 });
 
 test("observability exposes packet and proposal details in debug mode", async () => {
@@ -248,6 +279,34 @@ test("core-gate offline command returns stable json", async () => {
   assert.ok(parsed.result);
 });
 
+test("coverage command reports stable implementation coverage", async () => {
+  const { stdout } = await execFileAsync("pnpm", ["run", "coverage"], {
+    cwd: process.cwd(),
+    env: { ...process.env, PHONOWELL_DISABLE_CODEX_RUNTIME: "1" },
+  });
+  const jsonStart = stdout.indexOf("{");
+  assert.notEqual(jsonStart, -1);
+  const parsed = JSON.parse(stdout.slice(jsonStart));
+  assert.equal(parsed.summary.total, 19);
+  assert.equal(parsed.summary.implemented, 19);
+  assert.equal(parsed.summary.missing, 0);
+});
+
+test("coverage route matches the stable coverage contract", async () => {
+  const engine = new PhonoWellEngine();
+  const response = await handleReadRoutes(makeCtx({
+    engine,
+    method: "GET",
+    path: "/api/coverage",
+  }));
+
+  assert.ok(response);
+  const payload = JSON.parse(response.body);
+  assert.equal(payload.summary.total, 19);
+  assert.equal(payload.summary.implemented, 19);
+  assert.equal(payload.summary.missing, 0);
+});
+
 test("core-gate route is read-only", async () => {
   const engine = new PhonoWellEngine();
   engine.bootstrapInitialState();
@@ -267,6 +326,100 @@ test("core-gate route is read-only", async () => {
   assert.equal(persistCalls, 0);
   assert.deepEqual(after, before);
   assert.equal(typeof payload.gateResult, "string");
+});
+
+test("hidden mutating maintenance routes are gated behind debug mode", async () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+
+  const resetResponse = await handleReadRoutes(makeCtx({
+    engine,
+    method: "POST",
+    path: "/api/reset-state",
+    debugMode: false,
+  }));
+  const persistResponse = await handleReadRoutes(makeCtx({
+    engine,
+    method: "POST",
+    path: "/api/state/persist",
+    debugMode: false,
+  }));
+  const importResponse = await handleReadRoutes(makeCtx({
+    engine,
+    method: "POST",
+    path: "/api/import-assets",
+    debugMode: false,
+  }));
+
+  assert.ok(resetResponse);
+  assert.ok(persistResponse);
+  assert.ok(importResponse);
+  assert.equal(resetResponse.status, 404);
+  assert.equal(persistResponse.status, 404);
+  assert.equal(importResponse.status, 404);
+  assert.match(resetResponse.body, /debug api disabled/);
+  assert.match(persistResponse.body, /debug api disabled/);
+  assert.match(importResponse.body, /debug api disabled/);
+});
+
+test("public state route redacts debug-only internals", async () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
+  await engine.runDeepOrganize("test.public-state");
+
+  const response = await handleReadRoutes(makeCtx({
+    engine,
+    method: "GET",
+    path: "/api/state",
+    debugMode: false,
+  }));
+
+  assert.ok(response);
+  const payload = JSON.parse(response.body);
+  assert.deepEqual(payload.packetRecords, []);
+  assert.deepEqual(payload.proposals, []);
+  assert.deepEqual(payload.runLogs, []);
+  assert.deepEqual(payload.assetConversations, []);
+  assert.equal(typeof payload.project?.workdir, "undefined");
+  assert.ok(Array.isArray(payload.drops));
+});
+
+test("debug state route still exposes full internals", async () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+  engine.updateGoalOrigin({ status: "confirmed" });
+  await engine.runDeepOrganize("test.debug-state");
+
+  const response = await handleReadRoutes(makeCtx({
+    engine,
+    method: "GET",
+    path: "/api/state",
+    debugMode: true,
+  }));
+
+  assert.ok(response);
+  const payload = JSON.parse(response.body);
+  assert.ok(Array.isArray(payload.packetRecords));
+  assert.ok(Array.isArray(payload.proposals));
+  assert.equal(typeof payload.project?.workdir, "string");
+});
+
+test("runtime routes return 400 for malformed json bodies", async () => {
+  const engine = new PhonoWellEngine();
+  engine.bootstrapInitialState();
+
+  const response = await handleRuntimeRoutes({
+    ...makeCtx({
+      engine,
+      method: "POST",
+      path: "/api/conversations",
+    }),
+    req: makeRawReq("POST", "{bad-json"),
+  });
+
+  assert.ok(response);
+  assert.equal(response.status, 400);
 });
 
 test("loop read route is read-only and exposes user-facing checkpoint data", async () => {
@@ -304,4 +457,18 @@ test("drop update rejects invalid position payload", async () => {
   assert.ok(response);
   assert.equal(response.status, 400);
   assert.match(response.body, /invalid position\.x/);
+});
+
+test("static serving rejects paths outside the web root", () => {
+  const parent = mkdtempSync(join(tmpdir(), "phonowell-static-"));
+  const webRoot = join(parent, "webui");
+  mkdirSync(webRoot, { recursive: true });
+  writeFileSync(join(webRoot, "index.html"), "<h1>ok</h1>", "utf8");
+  writeFileSync(join(parent, "webui-secret.txt"), "secret", "utf8");
+
+  const safe = serveStatic(webRoot, "/index.html");
+  const escaped = serveStatic(webRoot, "/../webui-secret.txt");
+
+  assert.equal(safe.status, 200);
+  assert.equal(escaped.status, 403);
 });

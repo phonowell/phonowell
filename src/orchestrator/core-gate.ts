@@ -163,5 +163,6 @@ export async function runCoreGateScenario(engine: PhonoWellEngine): Promise<Core
   }
   await engine.runDeepOrganize("core-gate.scenario");
   await engine.runCycle();
+  engine.runDryRun();
   return evaluateCoreGate(engine.getState(), engine.getCatalog());
 }
